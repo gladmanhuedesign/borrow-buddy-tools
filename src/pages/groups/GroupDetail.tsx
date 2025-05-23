@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import GroupInviteLink from "@/components/groups/GroupInviteLink";
+import MemberManagement from "@/components/groups/MemberManagement";
 import {
   Form,
   FormControl,
@@ -43,7 +45,6 @@ import {
 } from "@/components/ui/dialog";
 import { ArrowLeft, Share2, Users, Plus, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const inviteFormSchema = z.object({
   email: z.string().email({
@@ -95,6 +96,7 @@ const GroupDetail = () => {
     data: group,
     isLoading: groupLoading,
     error: groupError,
+    refetch: refetchGroup
   } = useQuery({
     queryKey: ['group', id],
     queryFn: async () => {
@@ -268,6 +270,10 @@ const GroupDetail = () => {
     } finally {
       setInviting(false);
     }
+  };
+
+  const handleMembersChange = () => {
+    refetchGroup();
   };
 
   useEffect(() => {
@@ -514,29 +520,13 @@ const GroupDetail = () => {
             </Card>
           ) : (
             <Card>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Joined</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {group.members.map((member: Member) => (
-                    <TableRow key={member.id}>
-                      <TableCell className="font-medium">
-                        {member.profile?.display_name}
-                        {member.user_id === currentUser?.id && " (You)"}
-                      </TableCell>
-                      <TableCell className="capitalize">{member.role}</TableCell>
-                      <TableCell>
-                        {new Date(member.joined_at).toLocaleDateString()}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <MemberManagement
+                groupId={group.id}
+                members={group.members}
+                userRole={userRole}
+                isCreator={isCreator}
+                onMembersChange={handleMembersChange}
+              />
             </Card>
           )}
         </TabsContent>

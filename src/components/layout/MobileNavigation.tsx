@@ -1,10 +1,52 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Home, Hammer, UsersRound, InboxIcon } from "lucide-react";
+import { Home, Hammer, UsersRound, InboxIcon, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
 
 const MobileNavigation = () => {
   const location = useLocation();
+  const { currentUser } = useAuth();
+  const [invitationCount, setInvitationCount] = useState(0);
+  
+  useEffect(() => {
+    if (!currentUser?.email) return;
+
+    // Fetch pending invitations count
+    const fetchInvitationCount = async () => {
+      const { count, error } = await supabase
+        .from('group_invites')
+        .select('*', { count: 'exact', head: true })
+        .eq('email', currentUser.email);
+      
+      if (error) {
+        console.error('Error fetching invitation count:', error);
+        return;
+      }
+      
+      setInvitationCount(count || 0);
+    };
+
+    fetchInvitationCount();
+    
+    // Set up subscription to monitor changes to invitations
+    const channel = supabase
+      .channel('invitation-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'group_invites' }, 
+        () => {
+          fetchInvitationCount();
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser?.email]);
   
   const navItems = [
     {
@@ -20,7 +62,12 @@ const MobileNavigation = () => {
     {
       label: "Groups",
       icon: <UsersRound className="h-5 w-5" />,
-      href: "/groups"
+      href: "/groups",
+      notification: invitationCount > 0 ? (
+        <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
+          {invitationCount}
+        </Badge>
+      ) : null
     },
     {
       label: "Requests",
@@ -43,7 +90,10 @@ const MobileNavigation = () => {
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            {item.icon}
+            <span className="relative">
+              {item.icon}
+              {item.notification}
+            </span>
             <span className="text-xs">{item.label}</span>
           </Link>
         ))}

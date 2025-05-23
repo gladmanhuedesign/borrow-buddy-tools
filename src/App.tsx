@@ -15,6 +15,8 @@ import AddTool from "./pages/tools/AddTool";
 import Groups from "./pages/groups/Groups";
 import GroupDetail from "./pages/groups/GroupDetail";
 import CreateGroup from "./pages/groups/CreateGroup";
+import GroupInvitations from "./pages/groups/Invitations";
+import JoinGroup from "./pages/groups/JoinGroup";
 import Requests from "./pages/requests/Requests";
 import RequestDetail from "./pages/requests/RequestDetail";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -34,6 +36,8 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            {/* Public route for joining a group via invitation */}
+            <Route path="/invite/:inviteCode" element={<JoinGroup />} />
             <Route element={<RequireAuth />}>
               <Route element={<Layout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
@@ -43,6 +47,7 @@ const App = () => (
                 <Route path="/groups" element={<Groups />} />
                 <Route path="/groups/:id" element={<GroupDetail />} />
                 <Route path="/groups/create" element={<CreateGroup />} />
+                <Route path="/groups/invitations" element={<GroupInvitations />} />
                 <Route path="/requests" element={<Requests />} />
                 <Route path="/requests/:id" element={<RequestDetail />} />
               </Route>

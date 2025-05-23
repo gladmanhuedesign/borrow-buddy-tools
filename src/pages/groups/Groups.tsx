@@ -1,7 +1,7 @@
 
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Plus, Users } from "lucide-react";
+import { Plus, Users, Mail } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { Group } from "@/types";
@@ -10,10 +10,33 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "@/components/ui/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 
 const Groups = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  const [invitationCount, setInvitationCount] = useState(0);
+
+  // Fetch invitation count
+  useEffect(() => {
+    if (!currentUser?.email) return;
+
+    const fetchInvitationCount = async () => {
+      const { count, error } = await supabase
+        .from('group_invites')
+        .select('*', { count: 'exact', head: true })
+        .eq('email', currentUser.email);
+      
+      if (error) {
+        console.error('Error fetching invitation count:', error);
+        return;
+      }
+      
+      setInvitationCount(count || 0);
+    };
+
+    fetchInvitationCount();
+  }, [currentUser?.email]);
 
   // Fetch groups the user is a member of
   const {
@@ -94,9 +117,24 @@ const Groups = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">My Groups</h1>
-        <Button onClick={() => navigate("/groups/create")}>
-          <Plus className="mr-2 h-4 w-4" /> New Group
-        </Button>
+        <div className="flex gap-2">
+          {invitationCount > 0 && (
+            <Button 
+              variant="outline"
+              onClick={() => navigate("/groups/invitations")}
+              className="gap-1"
+            >
+              <Mail className="h-4 w-4" />
+              Invitations
+              <Badge variant="destructive" className="ml-1 text-xs">
+                {invitationCount}
+              </Badge>
+            </Button>
+          )}
+          <Button onClick={() => navigate("/groups/create")}>
+            <Plus className="mr-2 h-4 w-4" /> New Group
+          </Button>
+        </div>
       </div>
       
       {isLoading ? (
