@@ -1,7 +1,7 @@
 
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Plus, Users, Mail, AlertTriangle } from "lucide-react";
+import { Plus, Users, Mail, AlertTriangle, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { Group } from "@/types";
@@ -83,11 +83,13 @@ const EmptyState = ({ onCreateClick }: { onCreateClick: () => void }) => (
 const ErrorState = ({ 
   error, 
   isRecursionError, 
-  onNavigate 
+  onNavigate,
+  onRetry 
 }: { 
   error: any, 
   isRecursionError: boolean, 
-  onNavigate: () => void 
+  onNavigate: () => void,
+  onRetry: () => void
 }) => {
   // If it's a Supabase recursion error, display a specific message
   if (isRecursionError) {
@@ -96,8 +98,12 @@ const ErrorState = ({
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle>Database Configuration Issue</AlertTitle>
         <AlertDescription>
-          There is a database configuration issue that needs to be resolved.
-          <div className="mt-2">
+          The database policies have been updated. Please try refreshing the page.
+          <div className="mt-2 flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh Page
+            </Button>
             <Button variant="outline" size="sm" onClick={onNavigate}>
               Back to Dashboard
             </Button>
@@ -113,9 +119,10 @@ const ErrorState = ({
       <AlertTriangle className="h-4 w-4" />
       <AlertTitle>Error loading groups</AlertTitle>
       <AlertDescription>
-        There was a problem loading your groups. Please try again later.
+        There was a problem loading your groups. Please try again.
         <div className="mt-2">
-          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+          <Button variant="outline" size="sm" onClick={onRetry}>
+            <RefreshCw className="mr-2 h-4 w-4" />
             Try Again
           </Button>
         </div>
@@ -127,39 +134,58 @@ const ErrorState = ({
 // Custom hook for fetching invitation count
 const useInvitationCount = (userEmail: string | undefined) => {
   const [invitationCount, setInvitationCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<any>(null);
   
-  useEffect(() => {
+  const fetchInvitationCount = async () => {
     if (!userEmail) return;
 
-    const fetchInvitationCount = async () => {
-      try {
-        const { count, error } = await supabase
-          .from('group_invites')
-          .select('*', { count: 'exact', head: true })
-          .eq('email', userEmail);
-        
-        if (error) {
-          console.error('Error fetching invitation count:', error);
-          return;
-        }
-        
-        setInvitationCount(count || 0);
-      } catch (err) {
-        console.error('Error fetching invitation count:', err);
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { count, error } = await supabase
+        .from('group_invites')
+        .select('*', { count: 'exact', head: true })
+        .eq('email', userEmail);
+      
+      if (error) {
+        console.error('Error fetching invitation count:', error);
+        setError(error);
+        return;
       }
-    };
+      
+      setInvitationCount(count || 0);
+    } catch (err) {
+      console.error('Error fetching invitation count:', err);
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchInvitationCount();
   }, [userEmail]);
 
-  return invitationCount;
+  return { 
+    invitationCount, 
+    loading, 
+    error,
+    refetch: fetchInvitationCount
+  };
 };
 
 // Main Groups component
 const Groups = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const invitationCount = useInvitationCount(currentUser?.email);
+  const { 
+    invitationCount, 
+    loading: invitationsLoading, 
+    error: invitationsError,
+    refetch: refetchInvitations 
+  } = useInvitationCount(currentUser?.email);
   
   // Fetch groups the user is a member of
   const {
@@ -236,9 +262,10 @@ const Groups = () => {
       }
     },
     enabled: !!currentUser,
-    retry: false, // Don't retry on database policy errors
-    retryOnMount: false,
+    retry: 1, // Retry once on errors
+    retryOnMount: true,
     refetchOnWindowFocus: false,
+    staleTime: 30000, // Consider data stale after 30 seconds
   });
 
   // Check if the error contains the "infinite recursion" message
@@ -249,6 +276,12 @@ const Groups = () => {
   
   const handleCreateGroup = () => navigate("/groups/create");
 
+  // Handler to refresh both groups and invitation counts
+  const handleRefresh = () => {
+    refetch();
+    refetchInvitations();
+  };
+
   // If there's a recursion error, also try to notify the Supabase admin
   useEffect(() => {
     if (isRecursionError) {
@@ -258,7 +291,12 @@ const Groups = () => {
       // Show a toast to the user
       toast({
         title: "Database configuration issue detected",
-        description: "The administrator has been notified of this issue.",
+        description: "Please try refreshing the page.",
+        action: (
+          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+            Refresh
+          </Button>
+        ),
         variant: "destructive"
       });
     }
@@ -269,7 +307,7 @@ const Groups = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">My Groups</h1>
         <div className="flex gap-2">
-          {invitationCount > 0 && (
+          {!invitationsLoading && invitationCount > 0 && (
             <Button 
               variant="outline"
               onClick={() => navigate("/groups/invitations")}
@@ -293,6 +331,7 @@ const Groups = () => {
           error={error} 
           isRecursionError={isRecursionError} 
           onNavigate={() => navigate("/dashboard")} 
+          onRetry={handleRefresh}
         />
       ) : isLoading ? (
         <LoadingState />
