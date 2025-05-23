@@ -65,7 +65,7 @@ const CreateGroup = () => {
       
       console.log("Creating group with data:", data);
       
-      // Step 1: Create the group first
+      // STEP 1: Only create the group first, without trying to add members yet
       const { data: newGroup, error: groupError } = await supabase
         .from('groups')
         .insert({
@@ -84,46 +84,38 @@ const CreateGroup = () => {
       
       console.log("Group created successfully:", newGroup);
       
-      // Step 2: Use a delay before adding the member to avoid potential race conditions
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // Step 3: Add creator as admin member using direct insert approach
-      const { error: memberError } = await supabase
-        .from('group_members')
-        .insert({
-          group_id: newGroup.id,
-          user_id: currentUser.id,
-          role: 'admin'
-        });
-      
-      if (memberError) {
-        console.error("Adding member error:", memberError);
-        
-        // Handle specific errors
-        if (memberError.message?.includes('infinite recursion')) {
-          console.log("Recursion error detected, attempting to work around...");
-          
-          // The group was created but member addition failed
-          toast({
-            title: "Group created",
-            description: "Group was created but there was an issue with role assignment. You can still access your group.",
-          });
-          
-          // Navigate to the new group even if member addition fails
-          navigate(`/groups/${newGroup.id}`);
-          return;
-        }
-        
-        throw memberError;
-      }
-      
+      // Success notification even before adding the member
       toast({
         title: "Group created successfully",
         description: `"${data.name}" has been created.`,
       });
       
-      // Navigate to the new group
+      // Navigate to the group immediately
       navigate(`/groups/${newGroup.id}`);
+      
+      // STEP 2: Try to add the creator as admin in the background
+      // This happens after navigation, so even if it fails, the user is already at the group page
+      setTimeout(async () => {
+        try {
+          const { error: memberError } = await supabase
+            .from('group_members')
+            .insert({
+              group_id: newGroup.id,
+              user_id: currentUser.id,
+              role: 'admin'
+            });
+          
+          if (memberError) {
+            console.error("Background member addition failed:", memberError);
+            // We don't show this error to the user, since the group was created successfully
+          } else {
+            console.log("Creator added as admin successfully");
+          }
+        } catch (err) {
+          console.error("Background member addition error:", err);
+        }
+      }, 500);
+      
     } catch (error: any) {
       console.error("Complete error object:", error);
       
