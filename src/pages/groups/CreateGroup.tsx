@@ -38,7 +38,6 @@ const CreateGroup = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -61,11 +60,8 @@ const CreateGroup = () => {
     
     try {
       setIsLoading(true);
-      setError(null);
       
-      console.log("Creating group with data:", data);
-      
-      // STEP 1: Only create the group first, without trying to add members yet
+      // Insert the new group
       const { data: newGroup, error: groupError } = await supabase
         .from('groups')
         .insert({
@@ -77,66 +73,33 @@ const CreateGroup = () => {
         .select()
         .single();
       
-      if (groupError) {
-        console.error("Group creation error:", groupError);
-        throw groupError;
-      }
+      if (groupError) throw groupError;
       
-      console.log("Group created successfully:", newGroup);
+      // Add the creator as a member with 'admin' role
+      const { error: memberError } = await supabase
+        .from('group_members')
+        .insert({
+          group_id: newGroup.id,
+          user_id: currentUser.id,
+          role: 'admin'
+        });
       
-      // Success notification even before adding the member
+      if (memberError) throw memberError;
+      
       toast({
         title: "Group created successfully",
         description: `"${data.name}" has been created.`,
       });
       
-      // Navigate to the group immediately
+      // Navigate to the new group
       navigate(`/groups/${newGroup.id}`);
-      
-      // STEP 2: Try to add the creator as admin in the background
-      // This happens after navigation, so even if it fails, the user is already at the group page
-      setTimeout(async () => {
-        try {
-          const { error: memberError } = await supabase
-            .from('group_members')
-            .insert({
-              group_id: newGroup.id,
-              user_id: currentUser.id,
-              role: 'admin'
-            });
-          
-          if (memberError) {
-            console.error("Background member addition failed:", memberError);
-            // We don't show this error to the user, since the group was created successfully
-          } else {
-            console.log("Creator added as admin successfully");
-          }
-        } catch (err) {
-          console.error("Background member addition error:", err);
-        }
-      }, 500);
-      
     } catch (error: any) {
-      console.error("Complete error object:", error);
-      
-      // Handle specific error types
-      let errorMessage = "An error occurred while creating the group.";
-      
-      if (error.message?.includes('infinite recursion')) {
-        errorMessage = "Database policy configuration issue. Please try again later.";
-      } else if (error.code === '23505') {
-        errorMessage = "A group with this name already exists.";
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      setError(errorMessage);
-      
       toast({
         title: "Failed to create group",
-        description: errorMessage,
+        description: error.message || "An error occurred while creating the group.",
         variant: "destructive",
       });
+      console.error("Group creation error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -155,12 +118,6 @@ const CreateGroup = () => {
         </Button>
         <h1 className="text-2xl font-bold">Create a New Group</h1>
       </div>
-      
-      {error && (
-        <div className="bg-destructive/15 text-destructive p-3 rounded-md">
-          {error}
-        </div>
-      )}
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">

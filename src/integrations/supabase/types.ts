@@ -277,20 +277,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      can_insert_group_member: {
-        Args: { group_id: string; user_id: string }
-        Returns: boolean
-      }
       is_group_admin: {
         Args: { group_id: string }
         Returns: boolean
       }
       is_group_member: {
         Args: { group_id: string }
-        Returns: boolean
-      }
-      is_group_member_safe: {
-        Args: { group_id: string; user_id: string }
         Returns: boolean
       }
     }
