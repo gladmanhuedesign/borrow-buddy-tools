@@ -11,6 +11,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Form,
   FormControl,
@@ -48,29 +49,57 @@ const CreateGroup = () => {
   });
 
   const onSubmit = async (data: FormValues) => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      toast({
+        title: "Authentication error",
+        description: "You must be logged in to create a group.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
       setIsLoading(true);
-      // This will be replaced with the actual group creation API call
-      console.log("Creating group:", data);
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Insert the new group
+      const { data: newGroup, error: groupError } = await supabase
+        .from('groups')
+        .insert({
+          name: data.name,
+          description: data.description,
+          is_private: data.isPrivate,
+          creator_id: currentUser.id
+        })
+        .select()
+        .single();
+      
+      if (groupError) throw groupError;
+      
+      // Add the creator as a member with 'admin' role
+      const { error: memberError } = await supabase
+        .from('group_members')
+        .insert({
+          group_id: newGroup.id,
+          user_id: currentUser.id,
+          role: 'admin'
+        });
+      
+      if (memberError) throw memberError;
       
       toast({
         title: "Group created successfully",
         description: `"${data.name}" has been created.`,
       });
       
-      // Navigate to the groups list
-      navigate("/groups");
-    } catch (error) {
+      // Navigate to the new group
+      navigate(`/groups/${newGroup.id}`);
+    } catch (error: any) {
       toast({
         title: "Failed to create group",
-        description: "An error occurred while creating the group.",
+        description: error.message || "An error occurred while creating the group.",
         variant: "destructive",
       });
+      console.error("Group creation error:", error);
     } finally {
       setIsLoading(false);
     }

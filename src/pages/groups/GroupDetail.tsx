@@ -1,13 +1,16 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/components/ui/use-toast";
-import { Group } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import GroupInviteLink from "@/components/groups/GroupInviteLink";
 import {
   Form,
   FormControl,
@@ -39,7 +42,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Share2, Users, Hammer, Plus, Loader2 } from "lucide-react";
+import { ArrowLeft, Share2, Users, Plus, Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const inviteFormSchema = z.object({
   email: z.string().email({
@@ -49,16 +54,35 @@ const inviteFormSchema = z.object({
 
 type InviteFormValues = z.infer<typeof inviteFormSchema>;
 
+type Member = {
+  id: string;
+  user_id: string;
+  role: string;
+  joined_at: string;
+  profile: {
+    display_name: string;
+  };
+};
+
+type GroupWithMembers = {
+  id: string;
+  name: string;
+  description: string | null;
+  is_private: boolean;
+  created_at: string;
+  creator_id: string;
+  members: Member[];
+  memberCount: number;
+};
+
 const GroupDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const [group, setGroup] = useState<Group | null>(null);
-  const [loading, setLoading] = useState(true);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [inviting, setInviting] = useState(false);
-  const [members, setMembers] = useState<any[]>([]);
-  const [tools, setTools] = useState<any[]>([]);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
 
   const inviteForm = useForm<InviteFormValues>({
     resolver: zodResolver(inviteFormSchema),
@@ -67,50 +91,160 @@ const GroupDetail = () => {
     },
   });
 
-  useEffect(() => {
-    // This will be replaced with actual data fetching
-    const fetchGroupDetails = async () => {
-      try {
-        // Mock data for now
-        const mockGroup: Group = {
-          id: id || "mock-id",
-          name: "Sample Group",
-          description: "This is a sample group for demonstration purposes.",
-          createdAt: new Date().toISOString(),
-          createdBy: currentUser?.id || "unknown",
-          isPrivate: true,
-          memberCount: 1,
-        };
+  // Fetch group details
+  const {
+    data: group,
+    isLoading: groupLoading,
+    error: groupError,
+  } = useQuery({
+    queryKey: ['group', id],
+    queryFn: async () => {
+      if (!id || !currentUser) return null;
+      
+      // Fetch group details
+      const { data: groupData, error: groupError } = await supabase
+        .from('groups')
+        .select('*')
+        .eq('id', id)
+        .single();
         
-        setGroup(mockGroup);
-        setMembers([]);
-        setTools([]);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching group details:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load group details.",
-          variant: "destructive",
-        });
-        setLoading(false);
+      if (groupError) throw groupError;
+      
+      // Fetch group members
+      const { data: membersData, error: membersError } = await supabase
+        .from('group_members')
+        .select(`
+          id,
+          user_id,
+          role,
+          created_at as joined_at,
+          profiles: user_id (
+            display_name
+          )
+        `)
+        .eq('group_id', id);
+        
+      if (membersError) throw membersError;
+      
+      // Check current user's role in group
+      const currentMember = membersData.find(member => member.user_id === currentUser.id);
+      if (currentMember) {
+        setUserRole(currentMember.role);
       }
-    };
+      
+      // Generate invite code if user is admin or creator
+      if (groupData.creator_id === currentUser.id || (currentMember && currentMember.role === 'admin')) {
+        await ensureInviteCode(id);
+      }
+        
+      return {
+        ...groupData,
+        members: membersData,
+        memberCount: membersData.length,
+      } as GroupWithMembers;
+    },
+    enabled: !!id && !!currentUser,
+  });
+
+  // Fetch tools that belong to group members
+  const {
+    data: tools = [],
+    isLoading: toolsLoading,
+  } = useQuery({
+    queryKey: ['groupTools', id],
+    queryFn: async () => {
+      if (!id || !currentUser) return [];
+      
+      // Get user IDs of group members
+      const { data: memberIds } = await supabase
+        .from('group_members')
+        .select('user_id')
+        .eq('group_id', id);
+        
+      if (!memberIds || memberIds.length === 0) return [];
+      
+      // Get tools owned by group members
+      const { data: toolsData, error: toolsError } = await supabase
+        .from('tools')
+        .select(`
+          id,
+          name,
+          description,
+          status,
+          image_url,
+          owner_id,
+          profiles: owner_id (
+            display_name
+          )
+        `)
+        .in('owner_id', memberIds.map(m => m.user_id));
+        
+      if (toolsError) throw toolsError;
+      
+      return toolsData || [];
+    },
+    enabled: !!id && !!currentUser && !!group,
+  });
+
+  // Ensure an invite code exists for this group
+  const ensureInviteCode = async (groupId: string) => {
+    // Check if invite code already exists
+    const { data: existingInvites } = await supabase
+      .from('group_invites')
+      .select('invite_code')
+      .eq('group_id', groupId)
+      .limit(1);
+      
+    if (existingInvites && existingInvites.length > 0) {
+      setInviteCode(existingInvites[0].invite_code);
+      return existingInvites[0].invite_code;
+    }
     
-    fetchGroupDetails();
-  }, [id, currentUser?.id]);
+    // Generate a new invite code
+    const newInviteCode = Math.random().toString(36).substring(2, 10);
+    
+    // Store the invite code
+    const { error } = await supabase
+      .from('group_invites')
+      .insert({
+        group_id: groupId,
+        email: '*', // Special value for general invite link
+        invite_code: newInviteCode,
+        created_by: currentUser!.id
+      });
+      
+    if (error) {
+      console.error("Failed to create invite code:", error);
+      return null;
+    }
+    
+    setInviteCode(newInviteCode);
+    return newInviteCode;
+  };
   
   const handleInvite = async (data: InviteFormValues) => {
-    if (!group || !currentUser) return;
+    if (!group || !currentUser || !id) return;
     
     try {
       setInviting(true);
-      // This will be replaced with the actual invitation API call
-      console.log("Inviting user:", data.email);
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Generate a unique invite code
+      const inviteCode = Math.random().toString(36).substring(2, 10);
       
+      // Save the invite to the database
+      const { error } = await supabase
+        .from('group_invites')
+        .insert({
+          group_id: id,
+          email: data.email,
+          invite_code: inviteCode,
+          created_by: currentUser.id
+        });
+        
+      if (error) throw error;
+      
+      // In a real-world application, we would send an email here.
+      // For now, just show a toast notification
       toast({
         title: "Invitation sent",
         description: `An invitation has been sent to ${data.email}.`,
@@ -118,10 +252,10 @@ const GroupDetail = () => {
       
       setInviteDialogOpen(false);
       inviteForm.reset();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Failed to send invitation",
-        description: "An error occurred while sending the invitation.",
+        description: error.message || "An error occurred while sending the invitation.",
         variant: "destructive",
       });
     } finally {
@@ -129,10 +263,49 @@ const GroupDetail = () => {
     }
   };
 
-  if (loading) {
+  useEffect(() => {
+    if (groupError) {
+      toast({
+        title: "Error loading group",
+        description: "There was a problem loading the group details.",
+        variant: "destructive",
+      });
+      console.error(groupError);
+    }
+  }, [groupError]);
+
+  if (groupLoading) {
     return (
-      <div className="flex justify-center p-8">
-        <div className="animate-pulse">Loading group details...</div>
+      <div className="space-y-6">
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/groups")}
+            className="h-8 w-8 p-0"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <Skeleton className="h-8 w-48" />
+        </div>
+        
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-4 w-full" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-4 w-1/3" />
+          </CardContent>
+        </Card>
+        
+        <div>
+          <Skeleton className="h-10 w-full" />
+          <div className="mt-4 space-y-4">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -150,6 +323,9 @@ const GroupDetail = () => {
       </div>
     );
   }
+
+  const isCreator = currentUser?.id === group.creator_id;
+  const isAdmin = userRole === 'admin' || isCreator;
 
   return (
     <div className="space-y-6">
@@ -177,52 +353,61 @@ const GroupDetail = () => {
               {group.memberCount} {group.memberCount === 1 ? "member" : "members"}
             </div>
             <div className="flex gap-2">
-              <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Share2 className="mr-2 h-4 w-4" /> Invite
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Invite to {group.name}</DialogTitle>
-                    <DialogDescription>
-                      Send an invitation to join this group. The person will receive an email with a link to join.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <Form {...inviteForm}>
-                    <form onSubmit={inviteForm.handleSubmit(handleInvite)}>
-                      <FormField
-                        control={inviteForm.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email Address</FormLabel>
-                            <FormControl>
-                              <Input placeholder="email@example.com" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <DialogFooter className="mt-4">
-                        <Button type="button" variant="outline" onClick={() => setInviteDialogOpen(false)}>
-                          Cancel
-                        </Button>
-                        <Button type="submit" disabled={inviting}>
-                          {inviting ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...
-                            </>
-                          ) : (
-                            "Send Invitation"
+              {isAdmin && (
+                <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Share2 className="mr-2 h-4 w-4" /> Invite
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Invite to {group.name}</DialogTitle>
+                      <DialogDescription>
+                        Send an invitation to join this group. The person will receive an email with a link to join.
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    {inviteCode && (
+                      <div className="mb-4">
+                        <GroupInviteLink groupId={inviteCode} />
+                      </div>
+                    )}
+                    
+                    <Form {...inviteForm}>
+                      <form onSubmit={inviteForm.handleSubmit(handleInvite)}>
+                        <FormField
+                          control={inviteForm.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email Address</FormLabel>
+                              <FormControl>
+                                <Input placeholder="email@example.com" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
                           )}
-                        </Button>
-                      </DialogFooter>
-                    </form>
-                  </Form>
-                </DialogContent>
-              </Dialog>
+                        />
+                        <DialogFooter className="mt-4">
+                          <Button type="button" variant="outline" onClick={() => setInviteDialogOpen(false)}>
+                            Cancel
+                          </Button>
+                          <Button type="submit" disabled={inviting}>
+                            {inviting ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...
+                              </>
+                            ) : (
+                              "Send Invitation"
+                            )}
+                          </Button>
+                        </DialogFooter>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
           </div>
         </CardContent>
@@ -242,7 +427,13 @@ const GroupDetail = () => {
             </Button>
           </div>
           
-          {tools.length === 0 ? (
+          {toolsLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-24 w-full" />
+              ))}
+            </div>
+          ) : tools.length === 0 ? (
             <Card className="border-dashed">
               <CardHeader>
                 <CardTitle className="text-center">No Tools Yet</CardTitle>
@@ -258,11 +449,32 @@ const GroupDetail = () => {
             </Card>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {tools.map((tool) => (
-                <Card key={tool.id}>
+              {tools.map((tool: any) => (
+                <Card key={tool.id} className="h-full">
                   <CardHeader>
-                    <CardTitle>{tool.name}</CardTitle>
+                    <CardTitle className="line-clamp-1">{tool.name}</CardTitle>
+                    <CardDescription className="line-clamp-2">
+                      {tool.description}
+                    </CardDescription>
                   </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      Owner: {tool.profiles?.display_name}
+                    </p>
+                    <p className="text-sm font-medium mt-1">
+                      Status: <span className="capitalize">{tool.status}</span>
+                    </p>
+                  </CardContent>
+                  <CardFooter>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => navigate(`/tools/${tool.id}`)}
+                    >
+                      View Tool
+                    </Button>
+                  </CardFooter>
                 </Card>
               ))}
             </div>
@@ -272,9 +484,14 @@ const GroupDetail = () => {
         <TabsContent value="members" className="pt-4">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Group Members</h2>
+            {isAdmin && (
+              <Button size="sm" onClick={() => setInviteDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Invite Member
+              </Button>
+            )}
           </div>
           
-          {members.length === 0 ? (
+          {group.members.length === 0 ? (
             <Card className="border-dashed">
               <CardHeader>
                 <CardTitle className="text-center">Just You</CardTitle>
@@ -289,13 +506,31 @@ const GroupDetail = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
-              {members.map((member) => (
-                <div key={member.id}>
-                  {/* Member display would go here */}
-                </div>
-              ))}
-            </div>
+            <Card>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Joined</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {group.members.map((member: Member) => (
+                    <TableRow key={member.id}>
+                      <TableCell className="font-medium">
+                        {member.profile?.display_name}
+                        {member.user_id === currentUser?.id && " (You)"}
+                      </TableCell>
+                      <TableCell className="capitalize">{member.role}</TableCell>
+                      <TableCell>
+                        {new Date(member.joined_at).toLocaleDateString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
           )}
         </TabsContent>
       </Tabs>

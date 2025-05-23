@@ -12,7 +12,7 @@ interface GroupInviteLinkProps {
 const GroupInviteLink = ({ groupId }: GroupInviteLinkProps) => {
   const [copied, setCopied] = useState(false);
   
-  // Generate a mock invitation link
+  // Create an invitation link with the invite code
   const invitationLink = `${window.location.origin}/invite/${groupId}`;
   
   const copyToClipboard = async () => {
@@ -40,7 +40,7 @@ const GroupInviteLink = ({ groupId }: GroupInviteLinkProps) => {
   return (
     <div className="flex flex-col space-y-2">
       <label className="text-sm font-medium">Invitation Link</label>
-      <div className="flex w-full max-w-sm items-center space-x-2">
+      <div className="flex w-full items-center space-x-2">
         <Input
           value={invitationLink}
           readOnly
