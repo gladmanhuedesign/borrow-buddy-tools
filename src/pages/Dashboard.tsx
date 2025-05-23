@@ -4,30 +4,89 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Hammer, Users, PlusCircle, Clock } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
-  // Mock data for dashboard stats
+  // Fetch tools count
+  const { data: toolsCount = 0 } = useQuery({
+    queryKey: ['toolsCount', currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser) return 0;
+      const { count, error } = await supabase
+        .from('tools')
+        .select('id', { count: 'exact', head: true })
+        .eq('owner_id', currentUser.id);
+      
+      if (error) {
+        console.error('Error fetching tools count:', error);
+        return 0;
+      }
+      return count ?? 0;
+    },
+    enabled: !!currentUser
+  });
+
+  // Fetch groups count
+  const { data: groupsCount = 0 } = useQuery({
+    queryKey: ['groupsCount', currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser) return 0;
+      const { count, error } = await supabase
+        .from('group_members')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', currentUser.id);
+      
+      if (error) {
+        console.error('Error fetching groups count:', error);
+        return 0;
+      }
+      return count ?? 0;
+    },
+    enabled: !!currentUser
+  });
+
+  // Fetch active requests count
+  const { data: requestsCount = 0 } = useQuery({
+    queryKey: ['requestsCount', currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser) return 0;
+      const { count, error } = await supabase
+        .from('tool_requests')
+        .select('id', { count: 'exact', head: true })
+        .or(`requester_id.eq.${currentUser.id},tool.owner_id.eq.${currentUser.id}`)
+        .in('status', ['pending', 'approved']);
+      
+      if (error) {
+        console.error('Error fetching requests count:', error);
+        return 0;
+      }
+      return count ?? 0;
+    },
+    enabled: !!currentUser
+  });
+
   const stats = [
     { 
       title: "My Tools", 
-      value: 0, 
+      value: toolsCount, 
       icon: <Hammer className="h-5 w-5" />,
       action: () => navigate("/tools"),
       actionText: "View Tools"
     },
     { 
       title: "My Groups", 
-      value: 0, 
+      value: groupsCount, 
       icon: <Users className="h-5 w-5" />,
       action: () => navigate("/groups"),
       actionText: "View Groups" 
     },
     { 
       title: "Active Requests", 
-      value: 0, 
+      value: requestsCount, 
       icon: <Clock className="h-5 w-5" />,
       action: () => navigate("/requests"),
       actionText: "View Requests" 
