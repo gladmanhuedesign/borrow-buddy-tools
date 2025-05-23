@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -39,9 +38,16 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const Register = () => {
-  const { register } = useAuth();
+  const { register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+
+  // If already authenticated, redirect to dashboard
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -61,7 +67,7 @@ const Register = () => {
         title: "Registration successful",
         description: "Your account has been created" 
       });
-      navigate("/dashboard");
+      // Redirection happens in the useEffect based on isAuthenticated
     } catch (error: any) {
       console.error("Registration error:", error);
       toast({ 
@@ -69,9 +75,9 @@ const Register = () => {
         description: error.message || "An error occurred during registration",
         variant: "destructive"
       });
-    } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Only set loading to false on error
     }
+    // Note: We don't set isLoading to false on success because the component will unmount when redirected
   };
 
   return (

@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,9 +34,20 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const Login = () => {
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Get the intended destination from location state, or default to dashboard
+  const from = location.state?.from?.pathname || "/dashboard";
+  
+  // If already authenticated, redirect to dashboard
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, navigate, from]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -50,23 +61,21 @@ const Login = () => {
     try {
       setIsLoading(true);
       await login(values.email, values.password);
-      // If login is successful, we'll navigate
       toast({
         title: "Login successful",
         description: "Welcome back!"
       });
-      navigate("/dashboard");
+      // Redirection now happens in the useEffect above
     } catch (error: any) {
       console.error("Login error:", error);
-      // Show specific error message based on error
       toast({ 
         title: "Login failed", 
         description: error.message || "Invalid email or password",
         variant: "destructive"
       });
-    } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Only set loading to false on error
     }
+    // Note: We don't set isLoading to false on success because the component will unmount when redirected
   };
 
   return (

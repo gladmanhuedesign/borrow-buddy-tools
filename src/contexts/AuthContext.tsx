@@ -39,83 +39,89 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const checkAuth = async () => {
       try {
         setLoading(true);
-        // Get current session
-        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        // Set up auth state listener FIRST to prevent missing events
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          (event, currentSession) => {
+            console.log("Auth state changed:", event);
+            setSession(currentSession);
+            
+            if (currentSession && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+              // Use setTimeout to prevent possible deadlocks
+              setTimeout(async () => {
+                try {
+                  // Fetch profile when user signs in
+                  const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', currentSession.user.id)
+                    .single();
+                    
+                  if (profileError) {
+                    console.error('Profile fetch error:', profileError);
+                    return;
+                  }
+                    
+                  if (profile) {
+                    setCurrentUser({
+                      id: currentSession.user.id,
+                      email: currentSession.user.email || '',
+                      displayName: profile.display_name
+                    });
+                  }
+                  
+                  // Once authenticated, set loading to false
+                  setLoading(false);
+                } catch (error) {
+                  console.error('Auth state change error:', error);
+                  setLoading(false);
+                }
+              }, 0);
+            } else if (event === 'SIGNED_OUT') {
+              setCurrentUser(null);
+              setLoading(false);
+            }
+          }
+        );
+
+        // THEN check for existing session
+        const { data, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error("Session error:", error);
-          throw error;
+          setLoading(false);
+          return;
         }
         
-        if (session) {
-          setSession(session);
+        if (data.session) {
+          setSession(data.session);
+          
           // Fetch profile data
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('*')
-            .eq('id', session.user.id)
+            .eq('id', data.session.user.id)
             .single();
 
           if (profileError) {
             console.error('Error fetching profile:', profileError);
           } else if (profile) {
             setCurrentUser({
-              id: session.user.id,
-              email: session.user.email || '',
+              id: data.session.user.id,
+              email: data.session.user.email || '',
               displayName: profile.display_name
             });
           }
         }
+        
+        setLoading(false);
       } catch (error) {
         console.error('Auth check error:', error);
-      } finally {
         setLoading(false);
       }
     };
 
     checkAuth();
-
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
-        setSession(currentSession);
-        
-        if (currentSession && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-          // Use setTimeout to prevent possible deadlocks with Supabase auth state changes
-          setTimeout(async () => {
-            try {
-              // Fetch profile when user signs in
-              const { data: profile, error: profileError } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', currentSession.user.id)
-                .single();
-                
-              if (profileError) {
-                console.error('Profile fetch error:', profileError);
-                return;
-              }
-                
-              if (profile) {
-                setCurrentUser({
-                  id: currentSession.user.id,
-                  email: currentSession.user.email || '',
-                  displayName: profile.display_name
-                });
-              }
-            } catch (error) {
-              console.error('Auth state change error:', error);
-            }
-          }, 0);
-        } else if (event === 'SIGNED_OUT') {
-          setCurrentUser(null);
-        }
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
   }, []);
 
   // Register new user
@@ -178,6 +184,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       setSession(data.session);
+      return data.session;
     } catch (error: any) {
       console.error("Login process error:", error);
       throw error;
