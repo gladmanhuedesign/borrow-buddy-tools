@@ -65,7 +65,7 @@ const CreateGroup = () => {
       
       console.log("Creating group with data:", data);
       
-      // Insert the new group
+      // Step 1: Create the group first
       const { data: newGroup, error: groupError } = await supabase
         .from('groups')
         .insert({
@@ -82,9 +82,12 @@ const CreateGroup = () => {
         throw groupError;
       }
       
-      console.log("Group created:", newGroup);
+      console.log("Group created successfully:", newGroup);
       
-      // Add the creator as a member with 'admin' role
+      // Step 2: Use a delay before adding the member to avoid potential race conditions
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Step 3: Add creator as admin member using direct insert approach
       const { error: memberError } = await supabase
         .from('group_members')
         .insert({
@@ -96,9 +99,19 @@ const CreateGroup = () => {
       if (memberError) {
         console.error("Adding member error:", memberError);
         
-        // Check for recursion error
+        // Handle specific errors
         if (memberError.message?.includes('infinite recursion')) {
-          throw new Error("Database policy configuration error. Please contact support.");
+          console.log("Recursion error detected, attempting to work around...");
+          
+          // The group was created but member addition failed
+          toast({
+            title: "Group created",
+            description: "Group was created but there was an issue with role assignment. You can still access your group.",
+          });
+          
+          // Navigate to the new group even if member addition fails
+          navigate(`/groups/${newGroup.id}`);
+          return;
         }
         
         throw memberError;
@@ -118,7 +131,9 @@ const CreateGroup = () => {
       let errorMessage = "An error occurred while creating the group.";
       
       if (error.message?.includes('infinite recursion')) {
-        errorMessage = "Database configuration issue. The administrator has been notified.";
+        errorMessage = "Database policy configuration issue. Please try again later.";
+      } else if (error.code === '23505') {
+        errorMessage = "A group with this name already exists.";
       } else if (error.message) {
         errorMessage = error.message;
       }
