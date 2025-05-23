@@ -14,7 +14,7 @@ interface AuthContextType {
   currentUser: AuthUser | null;
   loading: boolean;
   register: (email: string, password: string, displayName: string) => Promise<void>;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>; // Update to Promise<void> to match the interface
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -184,7 +184,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       setSession(data.session);
-      return data.session;
+      // Return void instead of the session to match the interface
     } catch (error: any) {
       console.error("Login process error:", error);
       throw error;
