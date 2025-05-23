@@ -174,6 +174,8 @@ const Groups = () => {
       if (!currentUser) return [];
       
       try {
+        console.log("Fetching groups for user:", currentUser.id);
+        
         // Get groups where user is a member
         const { data: memberGroups, error: memberError } = await supabase
           .from('group_members')
@@ -194,6 +196,8 @@ const Groups = () => {
           console.error("Error fetching member groups:", memberError);
           throw memberError;
         }
+
+        console.log("Member groups data:", memberGroups);
 
         // Get the count of members for each group
         const groupsWithMemberCount = await Promise.all(
@@ -223,7 +227,9 @@ const Groups = () => {
           })
         );
         
-        return groupsWithMemberCount.filter(Boolean) as Group[];
+        const validGroups = groupsWithMemberCount.filter(Boolean) as Group[];
+        console.log("Processed groups:", validGroups);
+        return validGroups;
       } catch (error) {
         console.error("Error in groups query:", error);
         throw error;
@@ -231,6 +237,8 @@ const Groups = () => {
     },
     enabled: !!currentUser,
     retry: false, // Don't retry on database policy errors
+    retryOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   // Check if the error contains the "infinite recursion" message

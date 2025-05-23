@@ -38,6 +38,7 @@ const CreateGroup = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -60,6 +61,9 @@ const CreateGroup = () => {
     
     try {
       setIsLoading(true);
+      setError(null);
+      
+      console.log("Creating group with data:", data);
       
       // Insert the new group
       const { data: newGroup, error: groupError } = await supabase
@@ -73,7 +77,12 @@ const CreateGroup = () => {
         .select()
         .single();
       
-      if (groupError) throw groupError;
+      if (groupError) {
+        console.error("Group creation error:", groupError);
+        throw groupError;
+      }
+      
+      console.log("Group created:", newGroup);
       
       // Add the creator as a member with 'admin' role
       const { error: memberError } = await supabase
@@ -84,7 +93,16 @@ const CreateGroup = () => {
           role: 'admin'
         });
       
-      if (memberError) throw memberError;
+      if (memberError) {
+        console.error("Adding member error:", memberError);
+        
+        // Check for recursion error
+        if (memberError.message?.includes('infinite recursion')) {
+          throw new Error("Database policy configuration error. Please contact support.");
+        }
+        
+        throw memberError;
+      }
       
       toast({
         title: "Group created successfully",
@@ -94,12 +112,24 @@ const CreateGroup = () => {
       // Navigate to the new group
       navigate(`/groups/${newGroup.id}`);
     } catch (error: any) {
+      console.error("Complete error object:", error);
+      
+      // Handle specific error types
+      let errorMessage = "An error occurred while creating the group.";
+      
+      if (error.message?.includes('infinite recursion')) {
+        errorMessage = "Database configuration issue. The administrator has been notified.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
+      
       toast({
         title: "Failed to create group",
-        description: error.message || "An error occurred while creating the group.",
+        description: errorMessage,
         variant: "destructive",
       });
-      console.error("Group creation error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -118,6 +148,12 @@ const CreateGroup = () => {
         </Button>
         <h1 className="text-2xl font-bold">Create a New Group</h1>
       </div>
+      
+      {error && (
+        <div className="bg-destructive/15 text-destructive p-3 rounded-md">
+          {error}
+        </div>
+      )}
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
