@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -40,7 +39,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Share2, Users, Tool, Plus, Loader2 } from "lucide-react";
+import { ArrowLeft, Share2, Users, Hammer, Plus, Loader2 } from "lucide-react";
 
 const inviteFormSchema = z.object({
   email: z.string().email({

@@ -1,9 +1,8 @@
-
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { 
-  Tools, 
+  Wrench, 
   Search,
   Menu,
   Bell
@@ -17,7 +16,7 @@ const TopHeader = () => {
       <div className="container flex h-14 items-center justify-between">
         <div className="flex items-center gap-2">
           <Link to="/dashboard" className="flex items-center gap-2 font-bold">
-            <Tools className="h-5 w-5" />
+            <Wrench className="h-5 w-5" />
             <span>Tool Share</span>
           </Link>
         </div>

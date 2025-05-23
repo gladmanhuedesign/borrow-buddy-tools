@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Home, Tool, UsersRound, InboxIcon } from "lucide-react";
+import { Home, Hammer, UsersRound, InboxIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const MobileNavigation = () => {
@@ -14,7 +14,7 @@ const MobileNavigation = () => {
     },
     {
       label: "Tools",
-      icon: <Tool className="h-5 w-5" />,
+      icon: <Hammer className="h-5 w-5" />,
       href: "/tools"
     },
     {

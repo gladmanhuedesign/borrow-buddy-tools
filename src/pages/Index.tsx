@@ -1,8 +1,7 @@
-
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Tools, Share2, Users } from "lucide-react";
+import { Wrench, Share2, Users } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -13,7 +12,7 @@ const Index = () => {
       <header className="w-full py-6 px-4 bg-background/95 border-b">
         <div className="container flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Tools className="h-6 w-6" />
+            <Wrench className="h-6 w-6" />
             <span className="text-xl font-bold">Tool Share</span>
           </div>
           <div className="space-x-2">
@@ -70,7 +69,7 @@ const Index = () => {
             <div className="grid md:grid-cols-3 gap-8">
               <div className="text-center">
                 <div className="bg-primary/10 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                  <Tools className="w-8 h-8 text-primary" />
+                  <Wrench className="w-8 h-8 text-primary" />
                 </div>
                 <h3 className="text-xl font-bold mb-2">List Your Tools</h3>
                 <p className="text-muted-foreground">

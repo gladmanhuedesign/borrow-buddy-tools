@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tool, Users, PlusCircle, Clock } from "lucide-react";
+import { Hammer, Users, PlusCircle, Clock } from "lucide-react";
 
 const Dashboard = () => {
   const { currentUser } = useAuth();
@@ -14,7 +14,7 @@ const Dashboard = () => {
     { 
       title: "My Tools", 
       value: 0, 
-      icon: <Tool className="h-5 w-5" />,
+      icon: <Hammer className="h-5 w-5" />,
       action: () => navigate("/tools"),
       actionText: "View Tools"
     },
