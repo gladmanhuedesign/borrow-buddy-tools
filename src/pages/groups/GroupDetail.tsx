@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -110,24 +109,33 @@ const GroupDetail = () => {
         
       if (groupError) throw groupError;
       
-      // Fetch group members
+      // Fetch group members with their profiles
       const { data: membersData, error: membersError } = await supabase
         .from('group_members')
         .select(`
           id,
           user_id,
           role,
-          created_at as joined_at,
-          profiles: user_id (
-            display_name
-          )
+          created_at,
+          profiles:user_id(display_name)
         `)
         .eq('group_id', id);
         
       if (membersError) throw membersError;
       
+      // Format the members data to match our expected type
+      const formattedMembers: Member[] = membersData.map(member => ({
+        id: member.id,
+        user_id: member.user_id,
+        role: member.role,
+        joined_at: member.created_at,
+        profile: {
+          display_name: member.profiles?.display_name || 'Unknown User'
+        }
+      }));
+      
       // Check current user's role in group
-      const currentMember = membersData.find(member => member.user_id === currentUser.id);
+      const currentMember = formattedMembers.find(member => member.user_id === currentUser.id);
       if (currentMember) {
         setUserRole(currentMember.role);
       }
@@ -139,8 +147,8 @@ const GroupDetail = () => {
         
       return {
         ...groupData,
-        members: membersData,
-        memberCount: membersData.length,
+        members: formattedMembers,
+        memberCount: formattedMembers.length,
       } as GroupWithMembers;
     },
     enabled: !!id && !!currentUser,
@@ -173,9 +181,7 @@ const GroupDetail = () => {
           status,
           image_url,
           owner_id,
-          profiles: owner_id (
-            display_name
-          )
+          profiles:owner_id(display_name)
         `)
         .in('owner_id', memberIds.map(m => m.user_id));
         
@@ -193,6 +199,7 @@ const GroupDetail = () => {
       .from('group_invites')
       .select('invite_code')
       .eq('group_id', groupId)
+      .eq('email', '*')
       .limit(1);
       
     if (existingInvites && existingInvites.length > 0) {

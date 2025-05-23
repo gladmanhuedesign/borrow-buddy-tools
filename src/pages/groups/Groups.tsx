@@ -58,16 +58,19 @@ const Groups = () => {
           
           if (countError) {
             console.error("Error counting members:", countError);
-            return {
-              ...group,
-              memberCount: 0
-            };
+            return null;
           }
           
+          // Transform the Supabase data format to match our Group type
           return {
-            ...group,
+            id: group.id,
+            name: group.name,
+            description: group.description || "",
+            createdAt: group.created_at,
+            createdBy: group.creator_id,
+            isPrivate: group.is_private,
             memberCount: count || 0
-          };
+          } as Group;
         })
       );
       
