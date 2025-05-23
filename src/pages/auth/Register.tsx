@@ -24,6 +24,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { toast } from "@/components/ui/use-toast";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -56,9 +57,18 @@ const Register = () => {
     try {
       setIsLoading(true);
       await register(values.email, values.password, values.displayName);
+      toast({ 
+        title: "Registration successful",
+        description: "Your account has been created" 
+      });
       navigate("/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration error:", error);
+      toast({ 
+        title: "Registration failed", 
+        description: error.message || "An error occurred during registration",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }

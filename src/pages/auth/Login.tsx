@@ -24,6 +24,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { toast } from "@/components/ui/use-toast";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -49,9 +50,20 @@ const Login = () => {
     try {
       setIsLoading(true);
       await login(values.email, values.password);
+      // If login is successful, we'll navigate
+      toast({
+        title: "Login successful",
+        description: "Welcome back!"
+      });
       navigate("/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
+      // Show specific error message based on error
+      toast({ 
+        title: "Login failed", 
+        description: error.message || "Invalid email or password",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }

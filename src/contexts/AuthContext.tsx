@@ -43,6 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
+          console.error("Session error:", error);
           throw error;
         }
         
@@ -79,21 +80,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       async (event, currentSession) => {
         setSession(currentSession);
         
-        if (currentSession && event === 'SIGNED_IN') {
-          // Fetch profile when user signs in
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', currentSession.user.id)
-            .single();
-            
-          if (profile) {
-            setCurrentUser({
-              id: currentSession.user.id,
-              email: currentSession.user.email || '',
-              displayName: profile.display_name
-            });
-          }
+        if (currentSession && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+          // Use setTimeout to prevent possible deadlocks with Supabase auth state changes
+          setTimeout(async () => {
+            try {
+              // Fetch profile when user signs in
+              const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', currentSession.user.id)
+                .single();
+                
+              if (profileError) {
+                console.error('Profile fetch error:', profileError);
+                return;
+              }
+                
+              if (profile) {
+                setCurrentUser({
+                  id: currentSession.user.id,
+                  email: currentSession.user.email || '',
+                  displayName: profile.display_name
+                });
+              }
+            } catch (error) {
+              console.error('Auth state change error:', error);
+            }
+          }, 0);
         } else if (event === 'SIGNED_OUT') {
           setCurrentUser(null);
         }
@@ -107,8 +120,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Register new user
   const register = async (email: string, password: string, displayName: string) => {
-    setLoading(true);
     try {
+      // Start registration process
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -120,30 +133,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (error) {
+        console.error("Registration error:", error);
         throw error;
       }
 
-      if (data.user) {
+      // Check for user and session
+      if (!data.user) {
+        throw new Error("Registration failed - no user returned");
+      }
+
+      // For email confirmation flows, we won't have a session yet
+      if (!data.session) {
         toast({ 
           title: "Registration successful",
-          description: "Please check your email for verification (if required)." 
+          description: "Please check your email for verification." 
         });
+        return;
       }
+
+      // If we have a session, user was auto-confirmed
+      setSession(data.session);
+      // Profile should be created automatically via DB trigger
     } catch (error: any) {
-      toast({ 
-        title: "Registration failed", 
-        description: error.message || "An error occurred during registration",
-        variant: "destructive"
-      });
+      console.error("Registration process error:", error);
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
   // Login user
   const login = async (email: string, password: string) => {
-    setLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -151,24 +169,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (error) {
+        console.error("Login error:", error);
         throw error;
       }
 
-      if (data.user) {
-        toast({ 
-          title: "Login successful",
-          description: "Welcome back!" 
-        });
+      if (!data.user || !data.session) {
+        throw new Error("Login failed - authentication rejected");
       }
+
+      setSession(data.session);
     } catch (error: any) {
-      toast({ 
-        title: "Login failed", 
-        description: error.message || "Invalid email or password",
-        variant: "destructive"
-      });
+      console.error("Login process error:", error);
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -178,17 +190,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { error } = await supabase.auth.signOut();
       
       if (error) {
+        console.error("Logout error:", error);
         throw error;
       }
       
       setCurrentUser(null);
-      toast({ title: "Logged out successfully" });
+      setSession(null);
     } catch (error: any) {
-      toast({ 
-        title: "Logout failed", 
-        description: error.message || "An error occurred during logout",
-        variant: "destructive"
-      });
+      console.error("Logout process error:", error);
       throw error;
     }
   };
