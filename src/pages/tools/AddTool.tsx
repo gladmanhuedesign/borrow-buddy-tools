@@ -25,7 +25,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { defaultToolCategories, ToolCondition, toolConditionLabels } from "@/config/toolCategories";
+import { ToolCondition, toolConditionLabels } from "@/config/toolCategories";
 import { supabase } from "@/integrations/supabase/client";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -66,12 +66,19 @@ interface Group {
   description: string | null;
 }
 
+interface ToolCategory {
+  id: string;
+  name: string;
+}
+
 const AddTool = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [groups, setGroups] = useState<Group[]>([]);
+  const [categories, setCategories] = useState<ToolCategory[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
+  const [loadingCategories, setLoadingCategories] = useState(true);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
@@ -148,6 +155,43 @@ const AddTool = () => {
     
     fetchUserGroups();
   }, [currentUser]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        console.log("Fetching tool categories");
+        
+        const { data: categoriesData, error } = await supabase
+          .from('tool_categories')
+          .select('id, name')
+          .order('name');
+
+        if (error) {
+          console.error("Error fetching categories:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load tool categories.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        console.log("Tool categories:", categoriesData);
+        setCategories(categoriesData || []);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load tool categories.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+    
+    fetchCategories();
+  }, []);
 
   const uploadImage = async (file: File): Promise<string | null> => {
     try {
@@ -298,14 +342,19 @@ const AddTool = () => {
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
+                    disabled={loadingCategories}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
+                        <SelectValue placeholder={
+                          loadingCategories 
+                            ? "Loading categories..." 
+                            : "Select a category"
+                        } />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {defaultToolCategories.map((category) => (
+                      {categories.map((category) => (
                         <SelectItem
                           key={category.id}
                           value={category.id}
@@ -449,7 +498,7 @@ const AddTool = () => {
           
           <Button
             type="submit"
-            disabled={isLoading || loadingGroups || groups.length === 0}
+            disabled={isLoading || loadingGroups || loadingCategories || groups.length === 0 || categories.length === 0}
             className="w-full"
           >
             {isLoading ? (
