@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,6 +21,7 @@ import RequestDetail from "./pages/requests/RequestDetail";
 import { AuthProvider } from "./contexts/AuthContext";
 import RequireAuth from "./components/auth/RequireAuth";
 import Layout from "./components/layout/Layout";
+import EditTool from "./pages/tools/EditTool";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +43,7 @@ const App = () => (
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/tools" element={<Tools />} />
                 <Route path="/tools/:id" element={<ToolDetail />} />
+                <Route path="/tools/:id/edit" element={<EditTool />} />
                 <Route path="/tools/add" element={<AddTool />} />
                 <Route path="/groups" element={<Groups />} />
                 <Route path="/groups/:id" element={<GroupDetail />} />

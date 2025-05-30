@@ -399,7 +399,11 @@ const ToolDetail = () => {
               
               {isOwner && (
                 <div className="mt-6 space-y-2 pt-4 border-t">
-                  <Button variant="outline" className="w-full">
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => navigate(`/tools/${tool.id}/edit`)}
+                  >
                     Edit Tool
                   </Button>
                   <Button variant="outline" className="w-full" disabled={tool.status !== "available"}>
