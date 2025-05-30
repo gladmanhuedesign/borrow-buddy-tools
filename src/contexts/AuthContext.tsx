@@ -2,7 +2,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 interface AuthUser {
   id: string;
@@ -40,7 +40,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         console.log("Initializing auth...");
         
-        // Get initial session
+        // Set up auth state listener FIRST
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, currentSession) => {
+            console.log("Auth state changed:", event, currentSession ? "Session exists" : "No session");
+            
+            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+              if (currentSession) {
+                await handleSessionUpdate(currentSession);
+              }
+            } else if (event === 'SIGNED_OUT') {
+              console.log("User signed out, clearing state");
+              setCurrentUser(null);
+              setSession(null);
+              setLoading(false);
+            }
+          }
+        );
+
+        // THEN get initial session
         const { data: { session: initialSession }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -53,27 +71,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (initialSession) {
           await handleSessionUpdate(initialSession);
+        } else {
+          setLoading(false);
         }
-        
-        // Set up auth state listener
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (event, currentSession) => {
-            console.log("Auth state changed:", event, currentSession ? "Session exists" : "No session");
-            
-            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-              if (currentSession) {
-                await handleSessionUpdate(currentSession);
-              }
-            } else if (event === 'SIGNED_OUT') {
-              setCurrentUser(null);
-              setSession(null);
-              setLoading(false);
-            }
-          }
-        );
 
-        setLoading(false);
-        
         return () => {
           console.log("Cleaning up auth subscription");
           subscription.unsubscribe();
@@ -92,26 +93,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.log("Updating session for user:", newSession.user.id);
       setSession(newSession);
       
-      // Fetch profile data
-      const { data: profile, error: profileError } = await supabase
+      // Fetch profile data with timeout
+      const profilePromise = supabase
         .from('profiles')
         .select('*')
         .eq('id', newSession.user.id)
         .single();
 
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        // Continue anyway with basic user data
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
+      );
+
+      try {
+        const { data: profile, error: profileError } = await Promise.race([
+          profilePromise,
+          timeoutPromise
+        ]) as any;
+
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+          // Continue anyway with basic user data
+          setCurrentUser({
+            id: newSession.user.id,
+            email: newSession.user.email || '',
+            displayName: newSession.user.email?.split('@')[0] || 'Unknown'
+          });
+        } else if (profile) {
+          setCurrentUser({
+            id: newSession.user.id,
+            email: newSession.user.email || '',
+            displayName: profile.display_name
+          });
+        }
+      } catch (profileError) {
+        console.error('Profile fetch failed:', profileError);
+        // Fallback to basic user data
         setCurrentUser({
           id: newSession.user.id,
           email: newSession.user.email || '',
           displayName: newSession.user.email?.split('@')[0] || 'Unknown'
-        });
-      } else if (profile) {
-        setCurrentUser({
-          id: newSession.user.id,
-          email: newSession.user.email || '',
-          displayName: profile.display_name
         });
       }
       
@@ -182,6 +202,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       console.log("Login successful, session established");
+      // Session update will be handled by onAuthStateChange
     } catch (error: any) {
       console.error("Login process error:", error);
       throw error;
@@ -200,9 +221,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
       
-      setCurrentUser(null);
-      setSession(null);
       console.log("Logout successful");
+      // State clearing will be handled by onAuthStateChange
     } catch (error: any) {
       console.error("Logout process error:", error);
       throw error;

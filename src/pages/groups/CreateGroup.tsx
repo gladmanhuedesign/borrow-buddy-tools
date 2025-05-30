@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -35,7 +34,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const CreateGroup = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -49,7 +48,7 @@ const CreateGroup = () => {
   });
 
   const onSubmit = async (data: FormValues) => {
-    if (!currentUser) {
+    if (!currentUser || !isAuthenticated) {
       toast({
         title: "Authentication error",
         description: "You must be logged in to create a group.",
@@ -62,8 +61,9 @@ const CreateGroup = () => {
       setIsLoading(true);
       
       console.log("Creating group with user ID:", currentUser.id);
+      console.log("isAuthenticated:", isAuthenticated);
       
-      // Verify current session before proceeding
+      // Double-check session is valid
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !session) {
         console.error("Session verification failed:", sessionError);
@@ -72,12 +72,15 @@ const CreateGroup = () => {
           description: "Your session has expired. Please log in again.",
           variant: "destructive",
         });
+        navigate('/login');
         return;
       }
       
       console.log("Session verified, user authenticated:", session.user.id);
+      console.log("Session access token exists:", !!session.access_token);
       
-      // Insert the new group
+      // Use a transaction-like approach: create group first, then add member
+      console.log("Step 1: Creating group...");
       const { data: newGroup, error: groupError } = await supabase
         .from('groups')
         .insert({
@@ -94,10 +97,13 @@ const CreateGroup = () => {
         throw groupError;
       }
       
-      console.log("Group created successfully:", newGroup);
+      console.log("Step 1 complete: Group created successfully:", newGroup);
+      
+      // Small delay to ensure the group is fully committed
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Add the creator as a member with 'admin' role
-      console.log("Adding creator as admin member...");
+      console.log("Step 2: Adding creator as admin member...");
       const { error: memberError } = await supabase
         .from('group_members')
         .insert({
@@ -108,10 +114,12 @@ const CreateGroup = () => {
       
       if (memberError) {
         console.error("Member insertion error:", memberError);
+        // Try to clean up the created group
+        await supabase.from('groups').delete().eq('id', newGroup.id);
         throw memberError;
       }
       
-      console.log("Creator added as admin member successfully");
+      console.log("Step 2 complete: Creator added as admin member successfully");
       
       toast({
         title: "Group created successfully",
@@ -122,9 +130,17 @@ const CreateGroup = () => {
       navigate(`/groups/${newGroup.id}`);
     } catch (error: any) {
       console.error("Full error details:", error);
+      let errorMessage = "An error occurred while creating the group.";
+      
+      if (error.code === '42501') {
+        errorMessage = "Permission denied. Please refresh the page and try again.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Failed to create group",
-        description: error.message || "An error occurred while creating the group.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
