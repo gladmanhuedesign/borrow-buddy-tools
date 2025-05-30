@@ -38,12 +38,22 @@ export const NewToolsFeed = () => {
 
       const groupIds = userGroups.map(g => g.group_id);
 
-      // Get tools from user's groups (excluding their own tools)
+      // Get all members from user's groups (excluding the current user)
+      const { data: groupMembers, error: membersError } = await supabase
+        .from('group_members')
+        .select('user_id, group_id')
+        .in('group_id', groupIds)
+        .neq('user_id', currentUser.id);
+
+      if (membersError || !groupMembers?.length) return [];
+
+      const memberIds = [...new Set(groupMembers.map(m => m.user_id))];
+
+      // Get tools from group members (excluding current user's tools)
       const { data: toolsData, error: toolsError } = await supabase
         .from('tools')
-        .select('id, name, description, image_url, created_at, owner_id, group_id')
-        .in('group_id', groupIds)
-        .neq('owner_id', currentUser.id)
+        .select('id, name, description, image_url, created_at, owner_id')
+        .in('owner_id', memberIds)
         .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
         .order('created_at', { ascending: false })
         .limit(5);
@@ -55,9 +65,8 @@ export const NewToolsFeed = () => {
 
       if (!toolsData || toolsData.length === 0) return [];
 
-      // Get owner names and group names separately
+      // Get owner names and determine which group each tool belongs to
       const ownerIds = [...new Set(toolsData.map(tool => tool.owner_id))];
-      const toolGroupIds = [...new Set(toolsData.map(tool => tool.group_id))];
 
       const [ownersResponse, groupsResponse] = await Promise.all([
         supabase
@@ -67,7 +76,7 @@ export const NewToolsFeed = () => {
         supabase
           .from('groups')
           .select('id, name')
-          .in('id', toolGroupIds)
+          .in('id', groupIds)
       ]);
 
       // Create lookup maps
@@ -78,6 +87,14 @@ export const NewToolsFeed = () => {
         (groupsResponse.data || []).map(group => [group.id, group.name])
       );
 
+      // Create a map of user to their groups
+      const userGroupMap = new Map<string, string>();
+      groupMembers.forEach(member => {
+        if (!userGroupMap.has(member.user_id)) {
+          userGroupMap.set(member.user_id, member.group_id);
+        }
+      });
+
       // Combine the data
       return toolsData.map(tool => ({
         id: tool.id,
@@ -86,7 +103,7 @@ export const NewToolsFeed = () => {
         image_url: tool.image_url,
         created_at: tool.created_at,
         owner_name: ownersMap.get(tool.owner_id) || 'Unknown User',
-        group_name: groupsMap.get(tool.group_id) || 'Unknown Group',
+        group_name: groupsMap.get(userGroupMap.get(tool.owner_id) || '') || 'Unknown Group',
         owner_id: tool.owner_id
       })) as NewTool[];
     },
