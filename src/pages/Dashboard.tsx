@@ -1,9 +1,8 @@
-
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Hammer, Users, PlusCircle, Clock, Check, X, UserPlus } from "lucide-react";
+import { Hammer, Users, PlusCircle, Clock, Check, X, UserPlus, ArrowUp, ArrowDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -63,19 +62,56 @@ const Dashboard = () => {
     enabled: !!currentUser
   });
 
-  // Fetch active requests count
-  const { data: requestsCount = 0 } = useQuery({
-    queryKey: ['requestsCount', currentUser?.id],
+  // Fetch outgoing requests count (requests I've sent out)
+  const { data: outgoingRequestsCount = 0 } = useQuery({
+    queryKey: ['outgoingRequestsCount', currentUser?.id],
     queryFn: async () => {
       if (!currentUser) return 0;
       const { count, error } = await supabase
         .from('tool_requests')
         .select('id', { count: 'exact', head: true })
-        .or(`requester_id.eq.${currentUser.id},tool.owner_id.eq.${currentUser.id}`)
+        .eq('requester_id', currentUser.id)
         .in('status', ['pending', 'approved']);
       
       if (error) {
-        console.error('Error fetching requests count:', error);
+        console.error('Error fetching outgoing requests count:', error);
+        return 0;
+      }
+      return count ?? 0;
+    },
+    enabled: !!currentUser
+  });
+
+  // Fetch incoming requests count (requests sent to my tools)
+  const { data: incomingRequestsCount = 0 } = useQuery({
+    queryKey: ['incomingRequestsCount', currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser) return 0;
+      
+      // First get the tools owned by the current user
+      const { data: tools, error: toolsError } = await supabase
+        .from('tools')
+        .select('id')
+        .eq('owner_id', currentUser.id);
+      
+      if (toolsError) {
+        console.error('Error fetching tools for requests count:', toolsError);
+        return 0;
+      }
+      
+      if (!tools || tools.length === 0) return 0;
+      
+      const toolIds = tools.map(tool => tool.id);
+      
+      // Then count requests for those tools
+      const { count, error } = await supabase
+        .from('tool_requests')
+        .select('id', { count: 'exact', head: true })
+        .in('tool_id', toolIds)
+        .in('status', ['pending', 'approved']);
+      
+      if (error) {
+        console.error('Error fetching incoming requests count:', error);
         return 0;
       }
       return count ?? 0;
@@ -279,10 +315,22 @@ const Dashboard = () => {
     },
     { 
       title: "Active Requests", 
-      value: requestsCount, 
+      value: `${outgoingRequestsCount + incomingRequestsCount}`, 
       icon: <Clock className="h-5 w-5" />,
       action: () => navigate("/requests"),
-      actionText: "View Requests" 
+      actionText: "View Requests",
+      subtitle: (
+        <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
+          <div className="flex items-center gap-1">
+            <ArrowUp className="h-3 w-3" />
+            <span>{outgoingRequestsCount} sent</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <ArrowDown className="h-3 w-3" />
+            <span>{incomingRequestsCount} received</span>
+          </div>
+        </div>
+      )
     },
   ];
 
@@ -306,6 +354,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
+              {stat.subtitle}
             </CardContent>
             <CardFooter>
               <Button
