@@ -41,19 +41,10 @@ export const NewToolsFeed = () => {
       // Get tools from user's groups (excluding their own tools)
       const { data: toolsData, error: toolsError } = await supabase
         .from('tools')
-        .select(`
-          id,
-          name,
-          description,
-          image_url,
-          created_at,
-          owner_id,
-          profiles!owner_id (display_name),
-          groups!group_id (name)
-        `)
+        .select('id, name, description, image_url, created_at, owner_id, group_id')
         .in('group_id', groupIds)
         .neq('owner_id', currentUser.id)
-        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) // Last 7 days
+        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
         .order('created_at', { ascending: false })
         .limit(5);
 
@@ -62,14 +53,40 @@ export const NewToolsFeed = () => {
         return [];
       }
 
-      return (toolsData || []).map(tool => ({
+      if (!toolsData || toolsData.length === 0) return [];
+
+      // Get owner names and group names separately
+      const ownerIds = [...new Set(toolsData.map(tool => tool.owner_id))];
+      const toolGroupIds = [...new Set(toolsData.map(tool => tool.group_id))];
+
+      const [ownersResponse, groupsResponse] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('id, display_name')
+          .in('id', ownerIds),
+        supabase
+          .from('groups')
+          .select('id, name')
+          .in('id', toolGroupIds)
+      ]);
+
+      // Create lookup maps
+      const ownersMap = new Map(
+        (ownersResponse.data || []).map(owner => [owner.id, owner.display_name])
+      );
+      const groupsMap = new Map(
+        (groupsResponse.data || []).map(group => [group.id, group.name])
+      );
+
+      // Combine the data
+      return toolsData.map(tool => ({
         id: tool.id,
         name: tool.name,
         description: tool.description,
         image_url: tool.image_url,
         created_at: tool.created_at,
-        owner_name: (tool.profiles as any)?.display_name || 'Unknown User',
-        group_name: (tool.groups as any)?.name || 'Unknown Group',
+        owner_name: ownersMap.get(tool.owner_id) || 'Unknown User',
+        group_name: groupsMap.get(tool.group_id) || 'Unknown Group',
         owner_id: tool.owner_id
       })) as NewTool[];
     },
