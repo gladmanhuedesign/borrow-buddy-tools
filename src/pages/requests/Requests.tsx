@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -88,7 +87,13 @@ const Requests = () => {
         }
 
         console.log("Sent requests data:", sentData);
-        setSentRequests(sentData || []);
+        // Transform data to match RequestWithDetails interface and cast status
+        const transformedSentData = (sentData || []).map(request => ({
+          ...request,
+          status: request.status as ToolRequest["status"],
+          profiles: null // For sent requests, profiles is null at root level
+        }));
+        setSentRequests(transformedSentData);
 
         // Fetch requests received by the current user (requests for their tools)
         const { data: receivedData, error: receivedError } = await supabase
@@ -119,7 +124,12 @@ const Requests = () => {
         }
 
         console.log("Received requests data:", receivedData);
-        setReceivedRequests(receivedData || []);
+        // Transform data to match RequestWithDetails interface and cast status
+        const transformedReceivedData = (receivedData || []).map(request => ({
+          ...request,
+          status: request.status as ToolRequest["status"]
+        }));
+        setReceivedRequests(transformedReceivedData);
         
         setLoading(false);
       } catch (error) {
