@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Clock, User, Calendar, CheckCircle, XCircle, Package, RotateCcw } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface ToolHistoryProps {
   toolId: string;
@@ -133,68 +134,86 @@ export const ToolHistory = ({ toolId }: ToolHistoryProps) => {
       <CardHeader>
         <CardTitle>Borrowing History ({history.length})</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {history.map((entry) => {
-          const Icon = actionIcons[entry.action_type as keyof typeof actionIcons] || Clock;
-          
-          return (
-            <div key={entry.id} className="flex items-start space-x-4 p-4 border rounded-lg">
-              <div className="flex-shrink-0">
-                <Icon className="h-5 w-5 text-muted-foreground" />
-              </div>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Action</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>By</TableHead>
+              <TableHead>Borrower</TableHead>
+              <TableHead>Period</TableHead>
+              <TableHead>Details</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {history.map((entry) => {
+              const Icon = actionIcons[entry.action_type as keyof typeof actionIcons] || Clock;
               
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge variant={actionColors[entry.action_type as keyof typeof actionColors]}>
-                    {actionLabels[entry.action_type as keyof typeof actionLabels]}
-                  </Badge>
-                  <span className="text-sm text-muted-foreground">
-                    {format(new Date(entry.created_at), 'MMM d, yyyy h:mm a')}
-                  </span>
-                </div>
-                
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-sm">
-                    <User className="h-4 w-4" />
-                    <span>By: <strong>{entry.action_by_name}</strong></span>
-                    {entry.borrower_name !== entry.action_by_name && (
-                      <span>• Borrower: <strong>{entry.borrower_name}</strong></span>
-                    )}
-                  </div>
+              return (
+                <TableRow key={entry.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-4 w-4 text-muted-foreground" />
+                      <Badge variant={actionColors[entry.action_type as keyof typeof actionColors]}>
+                        {actionLabels[entry.action_type as keyof typeof actionLabels]}
+                      </Badge>
+                    </div>
+                  </TableCell>
                   
-                  {(entry.start_date || entry.end_date) && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
-                      <span>
+                  <TableCell>
+                    <div className="text-sm">
+                      {format(new Date(entry.created_at), 'MMM d, yyyy')}
+                      <div className="text-xs text-muted-foreground">
+                        {format(new Date(entry.created_at), 'h:mm a')}
+                      </div>
+                    </div>
+                  </TableCell>
+                  
+                  <TableCell>
+                    <div className="font-medium">{entry.action_by_name}</div>
+                  </TableCell>
+                  
+                  <TableCell>
+                    <div className="font-medium">{entry.borrower_name}</div>
+                  </TableCell>
+                  
+                  <TableCell>
+                    {(entry.start_date || entry.end_date) && (
+                      <div className="text-sm">
                         {entry.start_date && format(new Date(entry.start_date), 'MMM d')} 
                         {entry.start_date && entry.end_date && ' - '}
                         {entry.end_date && format(new Date(entry.end_date), 'MMM d, yyyy')}
-                      </span>
-                    </div>
-                  )}
+                      </div>
+                    )}
+                  </TableCell>
                   
-                  {entry.actual_pickup_date && (
-                    <div className="text-sm text-muted-foreground">
-                      Picked up: {format(new Date(entry.actual_pickup_date), 'MMM d, yyyy h:mm a')}
+                  <TableCell>
+                    <div className="space-y-1 text-sm">
+                      {entry.actual_pickup_date && (
+                        <div className="text-muted-foreground">
+                          Picked up: {format(new Date(entry.actual_pickup_date), 'MMM d, h:mm a')}
+                        </div>
+                      )}
+                      
+                      {entry.actual_return_date && (
+                        <div className="text-muted-foreground">
+                          Returned: {format(new Date(entry.actual_return_date), 'MMM d, h:mm a')}
+                        </div>
+                      )}
+                      
+                      {entry.notes && (
+                        <div className="text-xs bg-gray-50 p-1 rounded">
+                          {entry.notes}
+                        </div>
+                      )}
                     </div>
-                  )}
-                  
-                  {entry.actual_return_date && (
-                    <div className="text-sm text-muted-foreground">
-                      Returned: {format(new Date(entry.actual_return_date), 'MMM d, yyyy h:mm a')}
-                    </div>
-                  )}
-                  
-                  {entry.notes && (
-                    <div className="text-sm bg-gray-50 p-2 rounded">
-                      <strong>Note:</strong> {entry.notes}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );
