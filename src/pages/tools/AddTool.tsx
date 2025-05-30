@@ -1,17 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "@/components/ui/use-toast";
 import { ArrowLeft, Upload, Loader2 } from "lucide-react";
 import { z } from "zod";
@@ -332,74 +325,80 @@ const AddTool = () => {
             )}
           />
           
-          <div className="grid gap-6 md:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="categoryId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select
+          <FormField
+            control={form.control}
+            name="categoryId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Category</FormLabel>
+                <FormControl>
+                  <RadioGroup
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
+                    className="grid grid-cols-2 md:grid-cols-3 gap-3"
                     disabled={loadingCategories}
                   >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={
-                          loadingCategories 
-                            ? "Loading categories..." 
-                            : "Select a category"
-                        } />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem
-                          key={category.id}
-                          value={category.id}
-                        >
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="condition"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Condition</FormLabel>
-                  <Select
+                    {loadingCategories ? (
+                      <div className="col-span-full text-center text-muted-foreground">
+                        Loading categories...
+                      </div>
+                    ) : (
+                      categories.map((category) => (
+                        <div key={category.id} className="flex items-center space-x-2">
+                          <RadioGroupItem
+                            value={category.id}
+                            id={category.id}
+                            className="peer sr-only"
+                          />
+                          <label
+                            htmlFor={category.id}
+                            className="flex-1 cursor-pointer rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium text-center transition-colors hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground"
+                          >
+                            {category.name}
+                          </label>
+                        </div>
+                      ))
+                    )}
+                  </RadioGroup>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="condition"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Condition</FormLabel>
+                <FormControl>
+                  <RadioGroup
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
+                    className="grid grid-cols-2 md:grid-cols-5 gap-3"
                   >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select condition" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {Object.entries(toolConditionLabels).map(([value, label]) => (
-                        <SelectItem
-                          key={value}
+                    {Object.entries(toolConditionLabels).map(([value, label]) => (
+                      <div key={value} className="flex items-center space-x-2">
+                        <RadioGroupItem
                           value={value}
+                          id={value}
+                          className="peer sr-only"
+                        />
+                        <label
+                          htmlFor={value}
+                          className="flex-1 cursor-pointer rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium text-center transition-colors hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground"
                         >
                           {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+                        </label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           
           <FormField
             control={form.control}
@@ -407,33 +406,40 @@ const AddTool = () => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Share With Group</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  disabled={loadingGroups || groups.length === 0}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder={
-                        loadingGroups
-                          ? "Loading groups..."
-                          : groups.length === 0
-                          ? "You need to create or join a group first"
-                          : "Select a group"
-                      } />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {groups.map((group) => (
-                      <SelectItem
-                        key={group.id}
-                        value={group.id}
-                      >
-                        {group.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <FormControl>
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    className="grid grid-cols-1 md:grid-cols-2 gap-3"
+                    disabled={loadingGroups || groups.length === 0}
+                  >
+                    {loadingGroups ? (
+                      <div className="col-span-full text-center text-muted-foreground">
+                        Loading groups...
+                      </div>
+                    ) : groups.length === 0 ? (
+                      <div className="col-span-full text-center text-muted-foreground">
+                        You need to create or join a group first
+                      </div>
+                    ) : (
+                      groups.map((group) => (
+                        <div key={group.id} className="flex items-center space-x-2">
+                          <RadioGroupItem
+                            value={group.id}
+                            id={group.id}
+                            className="peer sr-only"
+                          />
+                          <label
+                            htmlFor={group.id}
+                            className="flex-1 cursor-pointer rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium text-center transition-colors hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground"
+                          >
+                            {group.name}
+                          </label>
+                        </div>
+                      ))
+                    )}
+                  </RadioGroup>
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
