@@ -41,14 +41,29 @@ const TopHeader = () => {
   return (
     <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur">
       <div className="container flex h-14 items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-6">
           <Link to="/dashboard" className="flex items-center gap-2 font-bold">
             <Wrench className="h-5 w-5" />
             <span>Tool Share</span>
           </Link>
+          
+          <nav className="hidden md:flex items-center gap-4">
+            <Button variant="ghost" asChild>
+              <Link to="/dashboard">Dashboard</Link>
+            </Button>
+            <Button variant="ghost" asChild>
+              <Link to="/tools">My Tools</Link>
+            </Button>
+            <Button variant="ghost" asChild>
+              <Link to="/groups">Groups</Link>
+            </Button>
+            <Button variant="ghost" asChild>
+              <Link to="/requests">Requests</Link>
+            </Button>
+          </nav>
         </div>
         
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-2">
           <Button variant="ghost" size="icon">
             <Bell className="h-5 w-5" />
           </Button>
