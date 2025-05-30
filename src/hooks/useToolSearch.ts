@@ -51,11 +51,21 @@ export const useToolSearch = (searchTerm: string, enabled: boolean = true) => {
       const memberIds = [...new Set(groupMembers?.map(m => m.user_id) || [])];
 
       // Search tools (user's own tools + tools from group members)
+      // Now includes category search by joining with tool_categories
       const { data: toolsData, error: toolsError } = await supabase
         .from('tools')
-        .select('id, name, description, category_id, owner_id, status, image_url')
+        .select(`
+          id, 
+          name, 
+          description, 
+          category_id, 
+          owner_id, 
+          status, 
+          image_url,
+          tool_categories!inner(name)
+        `)
         .in('owner_id', memberIds)
-        .or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
+        .or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,tool_categories.name.ilike.%${searchTerm}%`)
         .order('name', { ascending: true });
 
       if (toolsError) {
