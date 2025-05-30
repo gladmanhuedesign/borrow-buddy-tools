@@ -24,6 +24,8 @@ export const useToolSearch = (searchTerm: string, enabled: boolean = true) => {
     queryFn: async (): Promise<SearchResult[]> => {
       if (!currentUser?.id || !searchTerm.trim()) return [];
 
+      console.log('Searching for:', searchTerm);
+
       // Get user's groups
       const { data: userGroups, error: groupsError } = await supabase
         .from('group_members')
@@ -50,8 +52,7 @@ export const useToolSearch = (searchTerm: string, enabled: boolean = true) => {
 
       const memberIds = [...new Set(groupMembers?.map(m => m.user_id) || [])];
 
-      // Search tools (user's own tools + tools from group members)
-      // Use left join to include tools without categories
+      // Search tools by name and description first
       const { data: toolsData, error: toolsError } = await supabase
         .from('tools')
         .select(`
@@ -65,7 +66,7 @@ export const useToolSearch = (searchTerm: string, enabled: boolean = true) => {
           tool_categories(name)
         `)
         .in('owner_id', memberIds)
-        .or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,tool_categories.name.ilike.%${searchTerm}%`)
+        .or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
         .order('name', { ascending: true });
 
       if (toolsError) {
@@ -73,21 +74,66 @@ export const useToolSearch = (searchTerm: string, enabled: boolean = true) => {
         return [];
       }
 
-      if (!toolsData || toolsData.length === 0) return [];
+      // Also search for tools by category name
+      const { data: categorySearchData, error: categoryError } = await supabase
+        .from('tool_categories')
+        .select('id')
+        .ilike('name', `%${searchTerm}%`);
+
+      if (categoryError) {
+        console.error('Error searching categories:', categoryError);
+      }
+
+      const categoryIds = categorySearchData?.map(cat => cat.id) || [];
+      let categoryToolsData: any[] = [];
+
+      if (categoryIds.length > 0) {
+        const { data: catTools, error: catToolsError } = await supabase
+          .from('tools')
+          .select(`
+            id, 
+            name, 
+            description, 
+            category_id, 
+            owner_id, 
+            status, 
+            image_url,
+            tool_categories(name)
+          `)
+          .in('owner_id', memberIds)
+          .in('category_id', categoryIds)
+          .order('name', { ascending: true });
+
+        if (catToolsError) {
+          console.error('Error searching tools by category:', catToolsError);
+        } else {
+          categoryToolsData = catTools || [];
+        }
+      }
+
+      // Combine and deduplicate results
+      const allTools = [...(toolsData || []), ...categoryToolsData];
+      const uniqueTools = allTools.filter((tool, index, self) => 
+        index === self.findIndex(t => t.id === tool.id)
+      );
+
+      console.log('Found tools:', uniqueTools.length);
+
+      if (!uniqueTools || uniqueTools.length === 0) return [];
 
       // Get additional data
-      const ownerIds = [...new Set(toolsData.map(tool => tool.owner_id))];
-      const categoryIds = [...new Set(toolsData.map(tool => tool.category_id).filter(Boolean))];
+      const ownerIds = [...new Set(uniqueTools.map(tool => tool.owner_id))];
+      const categoryIds2 = [...new Set(uniqueTools.map(tool => tool.category_id).filter(Boolean))];
 
       const [ownersResponse, categoriesResponse, groupsResponse] = await Promise.all([
         supabase
           .from('profiles')
           .select('id, display_name')
           .in('id', ownerIds),
-        categoryIds.length > 0 ? supabase
+        categoryIds2.length > 0 ? supabase
           .from('tool_categories')
           .select('id, name')
-          .in('id', categoryIds) : Promise.resolve({ data: [] }),
+          .in('id', categoryIds2) : Promise.resolve({ data: [] }),
         supabase
           .from('groups')
           .select('id, name')
@@ -114,7 +160,7 @@ export const useToolSearch = (searchTerm: string, enabled: boolean = true) => {
       });
 
       // Combine the data
-      return toolsData.map(tool => ({
+      return uniqueTools.map(tool => ({
         id: tool.id,
         name: tool.name,
         description: tool.description || '',
