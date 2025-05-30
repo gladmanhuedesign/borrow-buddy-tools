@@ -73,10 +73,10 @@ export const ToolHistory = ({ toolId }: ToolHistoryProps) => {
           actual_return_date,
           notes,
           created_at,
-          borrower:borrower_id (
+          borrower_profile:borrower_id (
             display_name
           ),
-          action_performer:action_by (
+          action_performer_profile:action_by (
             display_name
           )
         `)
@@ -89,8 +89,8 @@ export const ToolHistory = ({ toolId }: ToolHistoryProps) => {
         id: entry.id,
         action_type: entry.action_type,
         action_by: entry.action_by,
-        borrower_name: entry.borrower?.display_name || 'Unknown User',
-        action_by_name: entry.action_performer?.display_name || 'Unknown User',
+        borrower_name: entry.borrower_profile?.display_name || 'Unknown User',
+        action_by_name: entry.action_performer_profile?.display_name || 'Unknown User',
         start_date: entry.start_date,
         end_date: entry.end_date,
         actual_pickup_date: entry.actual_pickup_date,
