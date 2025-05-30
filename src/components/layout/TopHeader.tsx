@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { 
   Wrench, 
   Search,
-  Menu,
-  Bell
+  Menu
 } from "lucide-react";
+import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
 
 const TopHeader = () => {
   const { currentUser, logout, isAuthenticated } = useAuth();
@@ -64,9 +64,7 @@ const TopHeader = () => {
         </div>
         
         <div className="hidden md:flex items-center gap-2">
-          <Button variant="ghost" size="icon">
-            <Bell className="h-5 w-5" />
-          </Button>
+          <NotificationDropdown />
           <Button variant="ghost" size="icon">
             <Search className="h-5 w-5" />
           </Button>

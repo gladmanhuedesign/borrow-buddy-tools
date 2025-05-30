@@ -1,16 +1,18 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Home, Hammer, UsersRound, InboxIcon, Mail } from "lucide-react";
+import { Home, Hammer, UsersRound, InboxIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { useNotifications } from "@/hooks/useNotifications";
 
 const MobileNavigation = () => {
   const location = useLocation();
   const { currentUser } = useAuth();
   const [invitationCount, setInvitationCount] = useState(0);
+  const { unreadCount } = useNotifications();
   
   useEffect(() => {
     if (!currentUser?.email) return;
@@ -52,7 +54,12 @@ const MobileNavigation = () => {
     {
       label: "Home",
       icon: <Home className="h-5 w-5" />,
-      href: "/dashboard"
+      href: "/dashboard",
+      notification: unreadCount > 0 ? (
+        <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
+          {unreadCount > 99 ? '99+' : unreadCount}
+        </Badge>
+      ) : null
     },
     {
       label: "Tools",
