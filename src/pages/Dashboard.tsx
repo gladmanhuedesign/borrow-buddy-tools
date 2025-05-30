@@ -216,15 +216,13 @@ const Dashboard = () => {
         </p>
       </div>
 
-      <div className="grid gap-6">
-        {/* Active Borrowing Section */}
-        <ActiveBorrowingList />
-        
-        {/* Active Lending Section */}
-        <ActiveLendingList />
-        
-        {/* Pending Actions Section */}
-        <PendingActions />
+      <div className="space-y-6">
+        {/* Three column layout for main sections */}
+        <div className="grid gap-6 md:grid-cols-3">
+          <ActiveBorrowingList />
+          <ActiveLendingList />
+          <PendingActions />
+        </div>
         
         {/* Quick Actions Section */}
         <QuickActions />
