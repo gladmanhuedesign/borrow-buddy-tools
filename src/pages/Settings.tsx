@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,42 +6,23 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { 
   Settings as SettingsIcon, 
   Bell, 
   Shield, 
   Palette,
   LogOut,
-  Trash2
+  Trash2,
+  Loader2
 } from "lucide-react";
 
 const Settings = () => {
   const { logout } = useAuth();
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const [toolRequestNotifications, setToolRequestNotifications] = useState(true);
-  const [groupInviteNotifications, setGroupInviteNotifications] = useState(true);
+  const { preferences, isLoading, updatePreferences, isUpdating } = useUserPreferences();
 
-  const handleNotificationChange = (type: string, value: boolean) => {
-    switch (type) {
-      case 'email':
-        setEmailNotifications(value);
-        break;
-      case 'push':
-        setPushNotifications(value);
-        break;
-      case 'tool-requests':
-        setToolRequestNotifications(value);
-        break;
-      case 'group-invites':
-        setGroupInviteNotifications(value);
-        break;
-    }
-    
-    toast({
-      title: "Settings updated",
-      description: "Your notification preferences have been saved.",
-    });
+  const handleNotificationChange = (field: string, value: boolean) => {
+    updatePreferences({ [field]: value });
   };
 
   const handleDeleteAccount = () => {
@@ -52,6 +32,17 @@ const Settings = () => {
       variant: "destructive",
     });
   };
+
+  if (isLoading) {
+    return (
+      <div className="container max-w-2xl mx-auto py-8">
+        <div className="flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span className="ml-2">Loading preferences...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container max-w-2xl mx-auto py-8">
@@ -83,8 +74,9 @@ const Settings = () => {
               </div>
               <Switch
                 id="email-notifications"
-                checked={emailNotifications}
-                onCheckedChange={(checked) => handleNotificationChange('email', checked)}
+                checked={preferences?.email_notifications ?? true}
+                onCheckedChange={(checked) => handleNotificationChange('email_notifications', checked)}
+                disabled={isUpdating}
               />
             </div>
 
@@ -99,8 +91,9 @@ const Settings = () => {
               </div>
               <Switch
                 id="push-notifications"
-                checked={pushNotifications}
-                onCheckedChange={(checked) => handleNotificationChange('push', checked)}
+                checked={preferences?.push_notifications ?? true}
+                onCheckedChange={(checked) => handleNotificationChange('push_notifications', checked)}
+                disabled={isUpdating}
               />
             </div>
 
@@ -115,8 +108,9 @@ const Settings = () => {
               </div>
               <Switch
                 id="tool-request-notifications"
-                checked={toolRequestNotifications}
-                onCheckedChange={(checked) => handleNotificationChange('tool-requests', checked)}
+                checked={preferences?.tool_request_notifications ?? true}
+                onCheckedChange={(checked) => handleNotificationChange('tool_request_notifications', checked)}
+                disabled={isUpdating}
               />
             </div>
 
@@ -131,8 +125,9 @@ const Settings = () => {
               </div>
               <Switch
                 id="group-invite-notifications"
-                checked={groupInviteNotifications}
-                onCheckedChange={(checked) => handleNotificationChange('group-invites', checked)}
+                checked={preferences?.group_invite_notifications ?? true}
+                onCheckedChange={(checked) => handleNotificationChange('group_invite_notifications', checked)}
+                disabled={isUpdating}
               />
             </div>
           </CardContent>

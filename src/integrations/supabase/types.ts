@@ -440,6 +440,39 @@ export type Database = {
           },
         ]
       }
+      user_preferences: {
+        Row: {
+          created_at: string
+          email_notifications: boolean
+          group_invite_notifications: boolean
+          id: string
+          push_notifications: boolean
+          tool_request_notifications: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_notifications?: boolean
+          group_invite_notifications?: boolean
+          id?: string
+          push_notifications?: boolean
+          tool_request_notifications?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_notifications?: boolean
+          group_invite_notifications?: boolean
+          id?: string
+          push_notifications?: boolean
+          tool_request_notifications?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -458,6 +491,19 @@ export type Database = {
           notification_data?: Json
         }
         Returns: string
+      }
+      get_or_create_user_preferences: {
+        Args: { target_user_id: string }
+        Returns: {
+          created_at: string
+          email_notifications: boolean
+          group_invite_notifications: boolean
+          id: string
+          push_notifications: boolean
+          tool_request_notifications: boolean
+          updated_at: string
+          user_id: string
+        }
       }
       get_user_group_role: {
         Args: { group_id: string; user_id: string }
