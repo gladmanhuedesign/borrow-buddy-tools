@@ -20,14 +20,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { defaultToolCategories, ToolCondition, toolConditionLabels } from "@/config/toolCategories";
-import { Group } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -60,6 +59,12 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+interface Group {
+  id: string;
+  name: string;
+  description: string | null;
+}
 
 const AddTool = () => {
   const { currentUser } = useAuth();
@@ -94,23 +99,41 @@ const AddTool = () => {
   }, [imageFile]);
 
   useEffect(() => {
-    // This will be replaced with actual group data fetching
-    const fetchGroups = async () => {
+    const fetchUserGroups = async () => {
+      if (!currentUser) return;
+      
       try {
-        // Mock data
-        const mockGroups: Group[] = [
-          {
-            id: "sample-group-1",
-            name: "Home Workshop",
-            description: "Tools for home projects and DIY",
-            createdAt: new Date().toISOString(),
-            createdBy: currentUser?.id || "",
-            isPrivate: true,
-            memberCount: 1,
-          },
-        ];
+        console.log("Fetching user groups for:", currentUser.id);
         
-        setGroups(mockGroups);
+        // Fetch groups where the user is a member
+        const { data: groupMembers, error } = await supabase
+          .from('group_members')
+          .select(`
+            groups (
+              id,
+              name,
+              description
+            )
+          `)
+          .eq('user_id', currentUser.id);
+
+        if (error) {
+          console.error("Error fetching user groups:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load your groups.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Extract groups from the relation
+        const userGroups = groupMembers
+          ?.map(member => member.groups)
+          .filter(group => group !== null) as Group[];
+        
+        console.log("User groups:", userGroups);
+        setGroups(userGroups || []);
       } catch (error) {
         console.error("Error fetching groups:", error);
         toast({
@@ -123,19 +146,72 @@ const AddTool = () => {
       }
     };
     
-    fetchGroups();
-  }, [currentUser?.id]);
+    fetchUserGroups();
+  }, [currentUser]);
+
+  const uploadImage = async (file: File): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `tool-images/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('tool-images')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        return null;
+      }
+
+      const { data } = supabase.storage
+        .from('tool-images')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      return null;
+    }
+  };
 
   const onSubmit = async (data: FormValues) => {
     if (!currentUser) return;
     
     try {
       setIsLoading(true);
-      // This will be replaced with the actual tool creation API call
       console.log("Creating tool:", data);
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      let imageUrl: string | null = null;
+      
+      // Upload image if provided
+      if (data.image) {
+        imageUrl = await uploadImage(data.image);
+        if (!imageUrl) {
+          toast({
+            title: "Image upload failed",
+            description: "Failed to upload the image. Tool will be created without image.",
+            variant: "destructive",
+          });
+        }
+      }
+
+      // Insert tool into database
+      const { error } = await supabase
+        .from('tools')
+        .insert({
+          name: data.name,
+          description: data.description,
+          category_id: data.categoryId,
+          owner_id: currentUser.id,
+          image_url: imageUrl,
+          status: 'available'
+        });
+
+      if (error) {
+        console.error("Error creating tool:", error);
+        throw error;
+      }
       
       toast({
         title: "Tool added successfully",
@@ -145,6 +221,7 @@ const AddTool = () => {
       // Navigate to the tools list
       navigate("/tools");
     } catch (error) {
+      console.error("Tool creation failed:", error);
       toast({
         title: "Failed to add tool",
         description: "An error occurred while adding your tool.",

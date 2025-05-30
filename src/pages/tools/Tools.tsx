@@ -5,29 +5,66 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tool } from "@/types";
 import { toolStatusLabels } from "@/config/toolCategories";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/components/ui/use-toast";
+
+interface Tool {
+  id: string;
+  name: string;
+  description: string | null;
+  category_id: string | null;
+  status: string;
+  image_url: string | null;
+  created_at: string;
+}
 
 const Tools = () => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [tools, setTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // This will be replaced with actual data fetching
-    const fetchTools = async () => {
+    const fetchUserTools = async () => {
+      if (!currentUser) return;
+      
       try {
-        // Mock data for now
-        setTools([]);
-        setLoading(false);
+        console.log("Fetching tools for user:", currentUser.id);
+        
+        const { data: toolsData, error } = await supabase
+          .from('tools')
+          .select('*')
+          .eq('owner_id', currentUser.id)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error("Error fetching tools:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load your tools.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        console.log("Fetched tools:", toolsData);
+        setTools(toolsData || []);
       } catch (error) {
         console.error("Error fetching tools:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load your tools.",
+          variant: "destructive",
+        });
+      } finally {
         setLoading(false);
       }
     };
     
-    fetchTools();
-  }, []);
+    fetchUserTools();
+  }, [currentUser]);
 
   return (
     <div className="space-y-6">
@@ -61,10 +98,10 @@ const Tools = () => {
           {tools.map((tool) => (
             <Link key={tool.id} to={`/tools/${tool.id}`}>
               <Card className="h-full overflow-hidden transition-shadow hover:shadow-md">
-                {tool.imageUrl && (
+                {tool.image_url && (
                   <div className="aspect-video w-full overflow-hidden">
                     <img
-                      src={tool.imageUrl}
+                      src={tool.image_url}
                       alt={tool.name}
                       className="h-full w-full object-cover"
                     />
@@ -78,7 +115,7 @@ const Tools = () => {
                     </Badge>
                   </div>
                   <CardDescription className="line-clamp-2">
-                    {tool.description}
+                    {tool.description || "No description provided"}
                   </CardDescription>
                 </CardHeader>
                 <CardFooter>
