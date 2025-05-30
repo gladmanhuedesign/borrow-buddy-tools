@@ -4,10 +4,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { 
   Wrench, 
-  Search,
   Menu
 } from "lucide-react";
 import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
+import { SearchInput } from "@/components/search/SearchInput";
 
 const TopHeader = () => {
   const { currentUser, logout, isAuthenticated } = useAuth();
@@ -63,11 +63,12 @@ const TopHeader = () => {
           </nav>
         </div>
         
+        <div className="hidden md:flex items-center gap-4 flex-1 justify-center max-w-md">
+          <SearchInput />
+        </div>
+        
         <div className="hidden md:flex items-center gap-2">
           <NotificationDropdown />
-          <Button variant="ghost" size="icon">
-            <Search className="h-5 w-5" />
-          </Button>
           <Button variant="outline" onClick={logout}>
             Sign Out
           </Button>

@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +19,7 @@ import GroupInvitations from "./pages/groups/Invitations";
 import JoinGroup from "./pages/groups/JoinGroup";
 import Requests from "./pages/requests/Requests";
 import RequestDetail from "./pages/requests/RequestDetail";
+import SearchResults from "./pages/SearchResults";
 import { AuthProvider } from "./contexts/AuthContext";
 import RequireAuth from "./components/auth/RequireAuth";
 import Layout from "./components/layout/Layout";
@@ -51,6 +53,7 @@ const App = () => (
                 <Route path="/groups/invitations" element={<GroupInvitations />} />
                 <Route path="/requests" element={<Requests />} />
                 <Route path="/requests/:id" element={<RequestDetail />} />
+                <Route path="/search" element={<SearchResults />} />
               </Route>
             </Route>
             <Route path="*" element={<NotFound />} />
