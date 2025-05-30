@@ -112,51 +112,55 @@ export const ActiveLendingList = () => {
           const tool = request.tools;
           
           return (
-            <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h4 className="font-medium">{tool.name}</h4>
-                  {isOverdue && <Badge variant="destructive">Overdue</Badge>}
-                  <Badge variant="outline">{request.status}</Badge>
+            <div key={request.id} className="p-4 border rounded-lg">
+              <div className="space-y-3">
+                <div className="flex items-start justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-medium truncate">{tool.name}</h4>
+                      {isOverdue && <Badge variant="destructive">Overdue</Badge>}
+                      <Badge variant="outline">{request.status}</Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      To: {request.profiles?.display_name}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Due: {format(new Date(request.end_date), 'MMM d, yyyy')}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  To: {request.profiles?.display_name}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Due: {format(new Date(request.end_date), 'MMM d, yyyy')}
-                </p>
-              </div>
-              
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => navigate(`/tools/${tool.id}`)}
-                >
-                  View History
-                </Button>
                 
-                {request.status === 'return_pending' && (
+                <div className="flex flex-wrap gap-2">
                   <Button
                     size="sm"
-                    onClick={() => handleConfirmReturn(request.id)}
-                    disabled={processingId === request.id}
+                    variant="ghost"
+                    onClick={() => navigate(`/tools/${tool.id}`)}
                   >
-                    Confirm Return
+                    View History
                   </Button>
-                )}
-                
-                {request.status === 'picked_up' && (
-                  <Button size="sm" variant="outline" disabled>
-                    In Use
-                  </Button>
-                )}
-                
-                {request.status === 'approved' && (
-                  <Button size="sm" variant="outline" disabled>
-                    Waiting for Pickup
-                  </Button>
-                )}
+                  
+                  {request.status === 'return_pending' && (
+                    <Button
+                      size="sm"
+                      onClick={() => handleConfirmReturn(request.id)}
+                      disabled={processingId === request.id}
+                    >
+                      Confirm Return
+                    </Button>
+                  )}
+                  
+                  {request.status === 'picked_up' && (
+                    <Button size="sm" variant="outline" disabled>
+                      In Use
+                    </Button>
+                  )}
+                  
+                  {request.status === 'approved' && (
+                    <Button size="sm" variant="outline" disabled>
+                      Waiting for Pickup
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           );
