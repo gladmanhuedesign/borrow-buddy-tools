@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tool } from "@/types";
@@ -13,6 +13,7 @@ import { ArrowLeft, AlertCircle, Clock, Loader2 } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Form,
   FormControl,
@@ -32,6 +33,8 @@ import {
 
 const requestFormSchema = z.object({
   notes: z.string().optional(),
+  startDate: z.string().min(1, "Start date is required"),
+  endDate: z.string().min(1, "End date is required"),
 });
 
 type RequestFormValues = z.infer<typeof requestFormSchema>;
@@ -50,33 +53,66 @@ const ToolDetail = () => {
     resolver: zodResolver(requestFormSchema),
     defaultValues: {
       notes: "",
+      startDate: "",
+      endDate: "",
     },
   });
 
   useEffect(() => {
-    // This will be replaced with actual data fetching
     const fetchToolDetails = async () => {
+      if (!id) return;
+      
       try {
-        // Mock data for demonstration
-        const mockTool: Tool = {
-          id: id || "mock-id",
-          name: "Power Drill",
-          description: "18V cordless drill with battery and charger",
-          categoryId: "power-tools",
-          condition: "good",
-          status: "available",
-          ownerId: "some-user-id", // Not the current user
-          groupId: "sample-group-1",
-          instructions: "Please charge after use",
-          imageUrl: "https://via.placeholder.com/640x360?text=Power+Drill",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+        console.log("Fetching tool details for ID:", id);
+        
+        const { data: toolData, error } = await supabase
+          .from('tools')
+          .select(`
+            *,
+            profiles:owner_id (
+              display_name
+            )
+          `)
+          .eq('id', id)
+          .single();
+
+        if (error) {
+          console.error("Error fetching tool:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load tool details.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+
+        if (!toolData) {
+          setTool(null);
+          setLoading(false);
+          return;
+        }
+
+        // Map the database fields to our Tool interface
+        const mappedTool: Tool = {
+          id: toolData.id,
+          name: toolData.name,
+          description: toolData.description || "",
+          categoryId: toolData.category_id || "",
+          condition: "good", // Default since condition isn't in DB yet
+          status: toolData.status,
+          ownerId: toolData.owner_id,
+          groupId: "sample-group-1", // Placeholder since group association isn't implemented yet
+          instructions: toolData.description || "",
+          imageUrl: toolData.image_url,
+          createdAt: toolData.created_at,
+          updatedAt: toolData.updated_at,
         };
         
-        setTool(mockTool);
+        setTool(mappedTool);
         
         // Check if current user is the owner
-        if (currentUser && mockTool.ownerId === currentUser.id) {
+        if (currentUser && toolData.owner_id === currentUser.id) {
           setIsOwner(true);
         }
         
@@ -100,11 +136,23 @@ const ToolDetail = () => {
     
     try {
       setRequesting(true);
-      // This will be replaced with the actual request API call
-      console.log("Requesting tool:", tool.id, data);
+      console.log("Creating tool request:", { toolId: tool.id, data });
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { error } = await supabase
+        .from('tool_requests')
+        .insert({
+          tool_id: tool.id,
+          requester_id: currentUser.id,
+          start_date: data.startDate,
+          end_date: data.endDate,
+          message: data.notes || null,
+          status: 'pending'
+        });
+
+      if (error) {
+        console.error("Error creating request:", error);
+        throw error;
+      }
       
       toast({
         title: "Request sent",
@@ -115,6 +163,7 @@ const ToolDetail = () => {
       requestForm.reset();
       navigate("/requests");
     } catch (error) {
+      console.error("Request creation failed:", error);
       toast({
         title: "Request failed",
         description: "An error occurred while sending your request.",
@@ -150,6 +199,9 @@ const ToolDetail = () => {
   // Find category by ID
   const category = defaultToolCategories.find(c => c.id === tool.categoryId);
 
+  // Get today's date for min date validation
+  const today = new Date().toISOString().split('T')[0];
+
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-2">
@@ -184,7 +236,7 @@ const ToolDetail = () => {
               <p className="mt-1 text-muted-foreground">{tool.description}</p>
             </div>
 
-            {tool.instructions && (
+            {tool.instructions && tool.instructions !== tool.description && (
               <div>
                 <h2 className="font-medium">Usage Instructions</h2>
                 <p className="mt-1 text-muted-foreground">{tool.instructions}</p>
@@ -230,7 +282,7 @@ const ToolDetail = () => {
                         )}
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="sm:max-w-md">
                       <DialogHeader>
                         <DialogTitle>Request to Borrow</DialogTitle>
                         <DialogDescription>
@@ -238,7 +290,45 @@ const ToolDetail = () => {
                         </DialogDescription>
                       </DialogHeader>
                       <Form {...requestForm}>
-                        <form onSubmit={requestForm.handleSubmit(handleRequest)}>
+                        <form onSubmit={requestForm.handleSubmit(handleRequest)} className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                              control={requestForm.control}
+                              name="startDate"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <label className="text-sm font-medium">Start Date</label>
+                                  <FormControl>
+                                    <input
+                                      type="date"
+                                      min={today}
+                                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                      {...field}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={requestForm.control}
+                              name="endDate"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <label className="text-sm font-medium">End Date</label>
+                                  <FormControl>
+                                    <input
+                                      type="date"
+                                      min={requestForm.watch("startDate") || today}
+                                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                      {...field}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
                           <FormField
                             control={requestForm.control}
                             name="notes"
@@ -255,7 +345,7 @@ const ToolDetail = () => {
                               </FormItem>
                             )}
                           />
-                          <DialogFooter className="mt-4">
+                          <DialogFooter>
                             <Button
                               type="button"
                               variant="outline"
@@ -286,14 +376,12 @@ const ToolDetail = () => {
                     Edit Tool
                   </Button>
                   <Button variant="outline" className="w-full" disabled={tool.status !== "available"}>
-                    Mark as Unavailable
+                    {tool.status === "available" ? "Mark as Unavailable" : "Mark as Available"}
                   </Button>
                 </div>
               )}
             </CardContent>
           </Card>
-          
-          {/* For future implementation: Tool history, lending records, etc. */}
         </div>
       </div>
     </div>
