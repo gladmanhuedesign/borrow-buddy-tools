@@ -63,6 +63,20 @@ const CreateGroup = () => {
       
       console.log("Creating group with user ID:", currentUser.id);
       
+      // Verify current session before proceeding
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        console.error("Session verification failed:", sessionError);
+        toast({
+          title: "Authentication error",
+          description: "Your session has expired. Please log in again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      console.log("Session verified, user authenticated:", session.user.id);
+      
       // Insert the new group
       const { data: newGroup, error: groupError } = await supabase
         .from('groups')
@@ -83,6 +97,7 @@ const CreateGroup = () => {
       console.log("Group created successfully:", newGroup);
       
       // Add the creator as a member with 'admin' role
+      console.log("Adding creator as admin member...");
       const { error: memberError } = await supabase
         .from('group_members')
         .insert({

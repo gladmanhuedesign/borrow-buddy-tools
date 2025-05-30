@@ -14,7 +14,7 @@ interface AuthContextType {
   currentUser: AuthUser | null;
   loading: boolean;
   register: (email: string, password: string, displayName: string) => Promise<void>;
-  login: (email: string, password: string) => Promise<void>; // Update to Promise<void> to match the interface
+  login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -36,98 +36,97 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Check if user is logged in on initial load
   useEffect(() => {
-    const checkAuth = async () => {
+    const initializeAuth = async () => {
       try {
-        setLoading(true);
+        console.log("Initializing auth...");
         
-        // Set up auth state listener FIRST to prevent missing events
+        // Get initial session
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Initial session error:", error);
+          setLoading(false);
+          return;
+        }
+
+        console.log("Initial session:", initialSession ? "Found" : "None");
+        
+        if (initialSession) {
+          await handleSessionUpdate(initialSession);
+        }
+        
+        // Set up auth state listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          (event, currentSession) => {
-            console.log("Auth state changed:", event);
-            setSession(currentSession);
+          async (event, currentSession) => {
+            console.log("Auth state changed:", event, currentSession ? "Session exists" : "No session");
             
-            if (currentSession && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-              // Use setTimeout to prevent possible deadlocks
-              setTimeout(async () => {
-                try {
-                  // Fetch profile when user signs in
-                  const { data: profile, error: profileError } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', currentSession.user.id)
-                    .single();
-                    
-                  if (profileError) {
-                    console.error('Profile fetch error:', profileError);
-                    return;
-                  }
-                    
-                  if (profile) {
-                    setCurrentUser({
-                      id: currentSession.user.id,
-                      email: currentSession.user.email || '',
-                      displayName: profile.display_name
-                    });
-                  }
-                  
-                  // Once authenticated, set loading to false
-                  setLoading(false);
-                } catch (error) {
-                  console.error('Auth state change error:', error);
-                  setLoading(false);
-                }
-              }, 0);
+            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+              if (currentSession) {
+                await handleSessionUpdate(currentSession);
+              }
             } else if (event === 'SIGNED_OUT') {
               setCurrentUser(null);
+              setSession(null);
               setLoading(false);
             }
           }
         );
 
-        // THEN check for existing session
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Session error:", error);
-          setLoading(false);
-          return;
-        }
-        
-        if (data.session) {
-          setSession(data.session);
-          
-          // Fetch profile data
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', data.session.user.id)
-            .single();
-
-          if (profileError) {
-            console.error('Error fetching profile:', profileError);
-          } else if (profile) {
-            setCurrentUser({
-              id: data.session.user.id,
-              email: data.session.user.email || '',
-              displayName: profile.display_name
-            });
-          }
-        }
-        
         setLoading(false);
+        
+        return () => {
+          console.log("Cleaning up auth subscription");
+          subscription.unsubscribe();
+        };
       } catch (error) {
-        console.error('Auth check error:', error);
+        console.error('Auth initialization error:', error);
         setLoading(false);
       }
     };
 
-    checkAuth();
+    initializeAuth();
   }, []);
+
+  const handleSessionUpdate = async (newSession: Session) => {
+    try {
+      console.log("Updating session for user:", newSession.user.id);
+      setSession(newSession);
+      
+      // Fetch profile data
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', newSession.user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        // Continue anyway with basic user data
+        setCurrentUser({
+          id: newSession.user.id,
+          email: newSession.user.email || '',
+          displayName: newSession.user.email?.split('@')[0] || 'Unknown'
+        });
+      } else if (profile) {
+        setCurrentUser({
+          id: newSession.user.id,
+          email: newSession.user.email || '',
+          displayName: profile.display_name
+        });
+      }
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('Session update error:', error);
+      setLoading(false);
+    }
+  };
 
   // Register new user
   const register = async (email: string, password: string, displayName: string) => {
     try {
-      // Start registration process
+      console.log("Registering user:", email);
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -143,7 +142,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
 
-      // Check for user and session
       if (!data.user) {
         throw new Error("Registration failed - no user returned");
       }
@@ -157,9 +155,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      // If we have a session, user was auto-confirmed
-      setSession(data.session);
-      // Profile should be created automatically via DB trigger
+      console.log("Registration successful with immediate session");
     } catch (error: any) {
       console.error("Registration process error:", error);
       throw error;
@@ -169,6 +165,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Login user
   const login = async (email: string, password: string) => {
     try {
+      console.log("Logging in user:", email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -183,8 +181,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error("Login failed - authentication rejected");
       }
 
-      setSession(data.session);
-      // Return void instead of the session to match the interface
+      console.log("Login successful, session established");
     } catch (error: any) {
       console.error("Login process error:", error);
       throw error;
@@ -194,6 +191,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Logout user
   const logout = async () => {
     try {
+      console.log("Logging out user");
+      
       const { error } = await supabase.auth.signOut();
       
       if (error) {
@@ -203,6 +202,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       setCurrentUser(null);
       setSession(null);
+      console.log("Logout successful");
     } catch (error: any) {
       console.error("Logout process error:", error);
       throw error;
@@ -215,7 +215,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     register,
     login,
     logout,
-    isAuthenticated: !!currentUser
+    isAuthenticated: !!currentUser && !!session
   };
 
   return (
