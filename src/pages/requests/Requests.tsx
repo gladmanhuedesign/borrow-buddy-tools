@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -127,7 +128,11 @@ const Requests = () => {
         // Transform data to match RequestWithDetails interface and cast status
         const transformedReceivedData = (receivedData || []).map(request => ({
           ...request,
-          status: request.status as ToolRequest["status"]
+          status: request.status as ToolRequest["status"],
+          tools: request.tools ? {
+            ...request.tools,
+            profiles: null // Tool owner profiles not needed for received requests
+          } : null
         }));
         setReceivedRequests(transformedReceivedData);
         
