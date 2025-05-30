@@ -57,13 +57,16 @@ export interface ToolRequest {
   id: string;
   toolId: string;
   borrowerId: string;
-  status: 'pending' | 'approved' | 'denied' | 'returned' | 'canceled' | 'overdue';
+  status: 'pending' | 'approved' | 'denied' | 'picked_up' | 'return_pending' | 'returned' | 'canceled' | 'overdue';
   requestedAt: string;
   approvedAt?: string;
   deniedAt?: string;
   pickupAt?: string;
   returnAt?: string;
   notes?: string;
+  picked_up_at?: string;
+  returned_at?: string;
+  return_notes?: string;
 }
 
 export interface Message {

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ToolRequest } from "@/types";
-import { ArrowLeft, Send, CheckCircle, XCircle, Loader2, RotateCcw } from "lucide-react";
+import { ArrowLeft, Send, CheckCircle, XCircle, Loader2, RotateCcw, Package, PackageCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 
@@ -16,6 +15,8 @@ const RequestStatusBadge = ({ status }: { status: ToolRequest["status"] }) => {
   const variants: Record<ToolRequest["status"], { variant: "default" | "outline" | "secondary" | "destructive"; label: string }> = {
     pending: { variant: "secondary", label: "Pending" },
     approved: { variant: "outline", label: "Approved" },
+    picked_up: { variant: "default", label: "Picked Up" },
+    return_pending: { variant: "secondary", label: "Return Pending" },
     denied: { variant: "destructive", label: "Denied" },
     returned: { variant: "default", label: "Returned" },
     canceled: { variant: "destructive", label: "Canceled" },
@@ -35,6 +36,9 @@ interface RequestDetail {
   message: string | null;
   created_at: string;
   updated_at: string;
+  picked_up_at: string | null;
+  returned_at: string | null;
+  return_notes: string | null;
   tools: {
     id: string;
     name: string;
@@ -71,6 +75,7 @@ const RequestDetail = () => {
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
   const [messageText, setMessageText] = useState("");
+  const [returnNotes, setReturnNotes] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
   const [processingAction, setProcessingAction] = useState(false);
 
@@ -92,6 +97,9 @@ const RequestDetail = () => {
             message,
             created_at,
             updated_at,
+            picked_up_at,
+            returned_at,
+            return_notes,
             tools (
               id,
               name,
@@ -179,35 +187,43 @@ const RequestDetail = () => {
     }
   };
 
-  const handleStatusUpdate = async (newStatus: ToolRequest["status"]) => {
+  const handleStatusUpdate = async (newStatus: ToolRequest["status"], notes?: string) => {
     if (!request || !currentUser) return;
     
     try {
       setProcessingAction(true);
       console.log(`Updating request ${request.id} status to:`, newStatus);
       
+      const updateData: any = { 
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      };
+      
+      if (notes && newStatus === 'returned') {
+        updateData.return_notes = notes;
+      }
+
       const { error } = await supabase
         .from('tool_requests')
-        .update({ 
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', request.id);
 
       if (error) throw error;
       
       // Update local state
-      setRequest({ ...request, status: newStatus });
+      setRequest({ ...request, status: newStatus, return_notes: notes || request.return_notes });
       
       const statusMessages = {
         approved: "Request approved successfully.",
         denied: "Request denied.",
-        returned: "Tool marked as returned.",
+        picked_up: "Tool pickup confirmed.",
+        return_pending: "Return initiation confirmed.",
+        returned: "Tool return confirmed.",
         canceled: "Request canceled."
       };
       
       toast({
-        title: `Request ${newStatus}`,
+        title: `Request ${newStatus.replace('_', ' ')}`,
         description: statusMessages[newStatus] || `Request status updated to ${newStatus}.`,
       });
       
@@ -221,6 +237,11 @@ const RequestDetail = () => {
     } finally {
       setProcessingAction(false);
     }
+  };
+
+  const handleReturnWithNotes = async () => {
+    await handleStatusUpdate('returned', returnNotes);
+    setReturnNotes("");
   };
 
   if (loading) {
@@ -246,6 +267,89 @@ const RequestDetail = () => {
   }
 
   const isRequester = request.profiles && currentUser?.id !== request.tools?.owner_id;
+
+  const getActionButtons = () => {
+    if (isOwner) {
+      switch (request.status) {
+        case "pending":
+          return (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => handleStatusUpdate("denied")}
+                disabled={processingAction}
+                className="flex-1"
+              >
+                {processingAction ? <Loader2 className="h-4 w-4 animate-spin" /> : <><XCircle className="mr-2 h-4 w-4" /> Deny</>}
+              </Button>
+              <Button 
+                onClick={() => handleStatusUpdate("approved")}
+                disabled={processingAction}
+                className="flex-1"
+              >
+                {processingAction ? <Loader2 className="h-4 w-4 animate-spin" /> : <><CheckCircle className="mr-2 h-4 w-4" /> Approve</>}
+              </Button>
+            </>
+          );
+        case "approved":
+          return (
+            <Button 
+              onClick={() => handleStatusUpdate("picked_up")}
+              disabled={processingAction}
+              className="flex-1"
+            >
+              {processingAction ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Package className="mr-2 h-4 w-4" /> Confirm Pickup</>}
+            </Button>
+          );
+        case "return_pending":
+          return (
+            <div className="space-y-2 w-full">
+              <Textarea
+                value={returnNotes}
+                onChange={(e) => setReturnNotes(e.target.value)}
+                placeholder="Optional return notes (condition, issues, etc.)"
+                rows={2}
+              />
+              <Button 
+                onClick={handleReturnWithNotes}
+                disabled={processingAction}
+                className="w-full"
+              >
+                {processingAction ? <Loader2 className="h-4 w-4 animate-spin" /> : <><PackageCheck className="mr-2 h-4 w-4" /> Confirm Return</>}
+              </Button>
+            </div>
+          );
+      }
+    }
+    
+    if (isRequester) {
+      switch (request.status) {
+        case "pending":
+          return (
+            <Button 
+              variant="outline"
+              onClick={() => handleStatusUpdate("canceled")}
+              disabled={processingAction}
+              className="flex-1"
+            >
+              {processingAction ? <Loader2 className="h-4 w-4 animate-spin" /> : <><XCircle className="mr-2 h-4 w-4" /> Cancel Request</>}
+            </Button>
+          );
+        case "picked_up":
+          return (
+            <Button 
+              onClick={() => handleStatusUpdate("return_pending")}
+              disabled={processingAction}
+              className="flex-1"
+            >
+              {processingAction ? <Loader2 className="h-4 w-4 animate-spin" /> : <><RotateCcw className="mr-2 h-4 w-4" /> Initiate Return</>}
+            </Button>
+          );
+      }
+    }
+    
+    return null;
+  };
 
   return (
     <div className="space-y-6">
@@ -288,6 +392,27 @@ const RequestDetail = () => {
               <h4 className="font-medium text-sm text-muted-foreground">Request Date</h4>
               <p>{formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}</p>
             </div>
+
+            {request.picked_up_at && (
+              <div>
+                <h4 className="font-medium text-sm text-muted-foreground">Picked Up</h4>
+                <p className="text-green-600">{new Date(request.picked_up_at).toLocaleDateString()}</p>
+              </div>
+            )}
+
+            {request.returned_at && (
+              <div>
+                <h4 className="font-medium text-sm text-muted-foreground">Returned</h4>
+                <p className="text-blue-600">{new Date(request.returned_at).toLocaleDateString()}</p>
+              </div>
+            )}
+
+            {request.return_notes && (
+              <div>
+                <h4 className="font-medium text-sm text-muted-foreground">Return Notes</h4>
+                <p className="text-sm">{request.return_notes}</p>
+              </div>
+            )}
             
             {request.message && (
               <div>
@@ -303,70 +428,7 @@ const RequestDetail = () => {
             
             {/* Action buttons based on user role and request status */}
             <div className="flex space-x-2 pt-4 border-t">
-              {isOwner && request.status === "pending" && (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => handleStatusUpdate("denied")}
-                    disabled={processingAction}
-                    className="flex-1"
-                  >
-                    {processingAction ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <XCircle className="mr-2 h-4 w-4" /> Deny
-                      </>
-                    )}
-                  </Button>
-                  <Button 
-                    onClick={() => handleStatusUpdate("approved")}
-                    disabled={processingAction}
-                    className="flex-1"
-                  >
-                    {processingAction ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <CheckCircle className="mr-2 h-4 w-4" /> Approve
-                      </>
-                    )}
-                  </Button>
-                </>
-              )}
-              
-              {isOwner && request.status === "approved" && (
-                <Button 
-                  onClick={() => handleStatusUpdate("returned")}
-                  disabled={processingAction}
-                  className="flex-1"
-                >
-                  {processingAction ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <RotateCcw className="mr-2 h-4 w-4" /> Mark as Returned
-                    </>
-                  )}
-                </Button>
-              )}
-              
-              {isRequester && request.status === "pending" && (
-                <Button 
-                  variant="outline"
-                  onClick={() => handleStatusUpdate("canceled")}
-                  disabled={processingAction}
-                  className="flex-1"
-                >
-                  {processingAction ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <XCircle className="mr-2 h-4 w-4" /> Cancel Request
-                    </>
-                  )}
-                </Button>
-              )}
+              {getActionButtons()}
             </div>
           </div>
         </CardContent>

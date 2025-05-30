@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -15,6 +14,8 @@ const RequestStatusBadge = ({ status }: { status: ToolRequest["status"] }) => {
   const variants: Record<ToolRequest["status"], { variant: "default" | "outline" | "secondary" | "destructive"; label: string }> = {
     pending: { variant: "secondary", label: "Pending" },
     approved: { variant: "outline", label: "Approved" },
+    picked_up: { variant: "default", label: "Picked Up" },
+    return_pending: { variant: "secondary", label: "Return Pending" },
     denied: { variant: "destructive", label: "Denied" },
     returned: { variant: "default", label: "Returned" },
     canceled: { variant: "destructive", label: "Canceled" },
@@ -33,6 +34,9 @@ interface RequestWithDetails {
   end_date: string;
   message: string | null;
   created_at: string;
+  picked_up_at: string | null;
+  returned_at: string | null;
+  return_notes: string | null;
   tools: {
     id: string;
     name: string;
@@ -73,6 +77,9 @@ const Requests = () => {
           end_date,
           message,
           created_at,
+          picked_up_at,
+          returned_at,
+          return_notes,
           tools (
             id,
             name,
@@ -109,6 +116,9 @@ const Requests = () => {
           end_date,
           message,
           created_at,
+          picked_up_at,
+          returned_at,
+          return_notes,
           requester_id,
           tools!inner (
             id,
@@ -155,14 +165,28 @@ const Requests = () => {
     fetchRequests();
   }, [currentUser]);
 
-  const handleQuickAction = async (requestId: string, action: 'approve' | 'deny') => {
+  const handleQuickAction = async (requestId: string, action: 'approve' | 'deny' | 'confirm_pickup' | 'confirm_return') => {
     try {
+      let updateData: any = { updated_at: new Date().toISOString() };
+      
+      switch (action) {
+        case 'approve':
+          updateData.status = 'approved';
+          break;
+        case 'deny':
+          updateData.status = 'denied';
+          break;
+        case 'confirm_pickup':
+          updateData.status = 'picked_up';
+          break;
+        case 'confirm_return':
+          updateData.status = 'returned';
+          break;
+      }
+
       const { error } = await supabase
         .from('tool_requests')
-        .update({ 
-          status: action === 'approve' ? 'approved' : 'denied',
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', requestId);
 
       if (error) throw error;
@@ -170,13 +194,20 @@ const Requests = () => {
       // Update local state
       setReceivedRequests(prev => 
         prev.map(req => 
-          req.id === requestId ? { ...req, status: (action === 'approve' ? 'approved' : 'denied') as ToolRequest["status"] } : req
+          req.id === requestId ? { ...req, status: updateData.status as ToolRequest["status"] } : req
         )
       );
 
+      const actionLabels = {
+        approve: 'approved',
+        deny: 'denied',
+        confirm_pickup: 'pickup confirmed',
+        confirm_return: 'return confirmed'
+      };
+
       toast({
-        title: `Request ${action}d`,
-        description: `The request has been ${action}d.`,
+        title: `Request ${actionLabels[action]}`,
+        description: `The request has been ${actionLabels[action]}.`,
       });
     } catch (error) {
       console.error(`Error ${action}ing request:`, error);
@@ -212,12 +243,78 @@ const Requests = () => {
     switch (status) {
       case 'pending': return 'text-yellow-600';
       case 'approved': return 'text-green-600';
+      case 'picked_up': return 'text-blue-600';
+      case 'return_pending': return 'text-orange-600';
       case 'denied': return 'text-red-600';
       case 'returned': return 'text-blue-600';
       case 'canceled': return 'text-gray-600';
       case 'overdue': return 'text-red-800';
       default: return 'text-gray-600';
     }
+  };
+
+  const getQuickActions = (request: RequestWithDetails) => {
+    if (request.status === "pending") {
+      return (
+        <>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={(e) => {
+              e.preventDefault();
+              handleQuickAction(request.id, 'deny');
+            }}
+          >
+            Deny
+          </Button>
+          <Button 
+            size="sm"
+            onClick={(e) => {
+              e.preventDefault();
+              handleQuickAction(request.id, 'approve');
+            }}
+          >
+            Approve
+          </Button>
+        </>
+      );
+    }
+    
+    if (request.status === "approved") {
+      return (
+        <Button 
+          size="sm"
+          onClick={(e) => {
+            e.preventDefault();
+            handleQuickAction(request.id, 'confirm_pickup');
+          }}
+        >
+          Confirm Pickup
+        </Button>
+      );
+    }
+    
+    if (request.status === "return_pending") {
+      return (
+        <Button 
+          size="sm"
+          onClick={(e) => {
+            e.preventDefault();
+            handleQuickAction(request.id, 'confirm_return');
+          }}
+        >
+          Confirm Return
+        </Button>
+      );
+    }
+    
+    return (
+      <Link to={`/requests/${request.id}`}>
+        <Button variant="ghost" size="sm">
+          View Details
+        </Button>
+      </Link>
+    );
   };
 
   return (
@@ -284,6 +381,16 @@ const Requests = () => {
                           <div className="text-xs text-muted-foreground">
                             {new Date(request.start_date).toLocaleDateString()} - {new Date(request.end_date).toLocaleDateString()}
                           </div>
+                          {request.picked_up_at && (
+                            <div className="text-xs text-green-600">
+                              Picked up: {new Date(request.picked_up_at).toLocaleDateString()}
+                            </div>
+                          )}
+                          {request.returned_at && (
+                            <div className="text-xs text-blue-600">
+                              Returned: {new Date(request.returned_at).toLocaleDateString()}
+                            </div>
+                          )}
                         </div>
                         <Button variant="ghost" size="sm">
                           View Details
@@ -333,37 +440,19 @@ const Requests = () => {
                         <div className="text-xs text-muted-foreground">
                           {new Date(request.start_date).toLocaleDateString()} - {new Date(request.end_date).toLocaleDateString()}
                         </div>
+                        {request.picked_up_at && (
+                          <div className="text-xs text-green-600">
+                            Picked up: {new Date(request.picked_up_at).toLocaleDateString()}
+                          </div>
+                        )}
+                        {request.returned_at && (
+                          <div className="text-xs text-blue-600">
+                            Returned: {new Date(request.returned_at).toLocaleDateString()}
+                          </div>
+                        )}
                       </div>
                       <div className="flex gap-2">
-                        {request.status === "pending" ? (
-                          <>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleQuickAction(request.id, 'deny');
-                              }}
-                            >
-                              Deny
-                            </Button>
-                            <Button 
-                              size="sm"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleQuickAction(request.id, 'approve');
-                              }}
-                            >
-                              Approve
-                            </Button>
-                          </>
-                        ) : (
-                          <Link to={`/requests/${request.id}`}>
-                            <Button variant="ghost" size="sm">
-                              View Details
-                            </Button>
-                          </Link>
-                        )}
+                        {getQuickActions(request)}
                       </div>
                     </div>
                   </CardContent>

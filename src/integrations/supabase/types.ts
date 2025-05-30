@@ -212,7 +212,10 @@ export type Database = {
           end_date: string
           id: string
           message: string | null
+          picked_up_at: string | null
           requester_id: string
+          return_notes: string | null
+          returned_at: string | null
           start_date: string
           status: string
           tool_id: string
@@ -223,7 +226,10 @@ export type Database = {
           end_date: string
           id?: string
           message?: string | null
+          picked_up_at?: string | null
           requester_id: string
+          return_notes?: string | null
+          returned_at?: string | null
           start_date: string
           status?: string
           tool_id: string
@@ -234,7 +240,10 @@ export type Database = {
           end_date?: string
           id?: string
           message?: string | null
+          picked_up_at?: string | null
           requester_id?: string
+          return_notes?: string | null
+          returned_at?: string | null
           start_date?: string
           status?: string
           tool_id?: string
