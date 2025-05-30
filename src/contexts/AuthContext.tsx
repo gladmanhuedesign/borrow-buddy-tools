@@ -214,18 +214,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log("Logging out user");
       
-      const { error } = await supabase.auth.signOut();
+      // Clear local state first to prevent UI issues
+      setCurrentUser(null);
+      setSession(null);
       
-      if (error) {
-        console.error("Logout error:", error);
-        throw error;
+      // Only attempt signOut if we have a session
+      if (session) {
+        const { error } = await supabase.auth.signOut();
+        
+        if (error) {
+          // If it's a session missing error, we can ignore it since we're already logged out
+          if (error.message?.includes('session') || error.message?.includes('Session')) {
+            console.log("Session already cleared, logout successful");
+            return;
+          }
+          console.error("Logout error:", error);
+          throw error;
+        }
       }
       
       console.log("Logout successful");
-      // State clearing will be handled by onAuthStateChange
     } catch (error: any) {
       console.error("Logout process error:", error);
-      throw error;
+      // Don't throw the error since we've already cleared the local state
+      // The user is effectively logged out from the UI perspective
     }
   };
 
