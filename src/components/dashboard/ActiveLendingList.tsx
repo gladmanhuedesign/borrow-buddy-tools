@@ -1,0 +1,157 @@
+
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import { format, isPast } from "date-fns";
+
+export const ActiveLendingList = () => {
+  const { currentUser } = useAuth();
+  const { toast } = useToast();
+  const [processingId, setProcessingId] = useState<string | null>(null);
+
+  const { data: lentTools = [], refetch } = useQuery({
+    queryKey: ['activeLending', currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser) return [];
+      
+      const { data: tools, error: toolsError } = await supabase
+        .from('tools')
+        .select('id')
+        .eq('owner_id', currentUser.id);
+      
+      if (toolsError) throw toolsError;
+      if (!tools || tools.length === 0) return [];
+      
+      const toolIds = tools.map(tool => tool.id);
+      
+      const { data, error } = await supabase
+        .from('tool_requests')
+        .select(`
+          id,
+          status,
+          start_date,
+          end_date,
+          picked_up_at,
+          tools (
+            id,
+            name,
+            description
+          ),
+          profiles (
+            display_name
+          )
+        `)
+        .in('tool_id', toolIds)
+        .in('status', ['approved', 'picked_up', 'return_pending']);
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!currentUser
+  });
+
+  const handleConfirmReturn = async (requestId: string) => {
+    setProcessingId(requestId);
+    
+    try {
+      const { error } = await supabase
+        .from('tool_requests')
+        .update({ 
+          status: 'returned',
+          returned_at: new Date().toISOString()
+        })
+        .eq('id', requestId);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Return confirmed",
+        description: "You have confirmed the tool return.",
+      });
+      
+      refetch();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  if (lentTools.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Active Lending</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">You're not currently lending any tools.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Active Lending ({lentTools.length})</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {lentTools.map((request) => {
+          const isOverdue = isPast(new Date(request.end_date));
+          const tool = request.tools;
+          
+          return (
+            <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h4 className="font-medium">{tool.name}</h4>
+                  {isOverdue && <Badge variant="destructive">Overdue</Badge>}
+                  <Badge variant="outline">{request.status}</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  To: {request.profiles?.display_name}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Due: {format(new Date(request.end_date), 'MMM d, yyyy')}
+                </p>
+              </div>
+              
+              <div className="flex gap-2">
+                {request.status === 'return_pending' && (
+                  <Button
+                    size="sm"
+                    onClick={() => handleConfirmReturn(request.id)}
+                    disabled={processingId === request.id}
+                  >
+                    Confirm Return
+                  </Button>
+                )}
+                
+                {request.status === 'picked_up' && (
+                  <Button size="sm" variant="outline" disabled>
+                    In Use
+                  </Button>
+                )}
+                
+                {request.status === 'approved' && (
+                  <Button size="sm" variant="outline" disabled>
+                    Waiting for Pickup
+                  </Button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+};

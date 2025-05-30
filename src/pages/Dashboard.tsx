@@ -7,6 +7,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { ActiveBorrowingList } from "@/components/dashboard/ActiveBorrowingList";
+import { ActiveLendingList } from "@/components/dashboard/ActiveLendingList";
+import { PendingActions } from "@/components/dashboard/PendingActions";
+import { QuickActions } from "@/components/dashboard/QuickActions";
 
 type Invitation = {
   id: string;
@@ -23,101 +27,6 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [processingId, setProcessingId] = useState<string | null>(null);
-
-  // Fetch tools count
-  const { data: toolsCount = 0 } = useQuery({
-    queryKey: ['toolsCount', currentUser?.id],
-    queryFn: async () => {
-      if (!currentUser) return 0;
-      const { count, error } = await supabase
-        .from('tools')
-        .select('id', { count: 'exact', head: true })
-        .eq('owner_id', currentUser.id);
-      
-      if (error) {
-        console.error('Error fetching tools count:', error);
-        return 0;
-      }
-      return count ?? 0;
-    },
-    enabled: !!currentUser
-  });
-
-  // Fetch groups count
-  const { data: groupsCount = 0 } = useQuery({
-    queryKey: ['groupsCount', currentUser?.id],
-    queryFn: async () => {
-      if (!currentUser) return 0;
-      const { count, error } = await supabase
-        .from('group_members')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', currentUser.id);
-      
-      if (error) {
-        console.error('Error fetching groups count:', error);
-        return 0;
-      }
-      return count ?? 0;
-    },
-    enabled: !!currentUser
-  });
-
-  // Fetch outgoing requests count (requests I've sent out)
-  const { data: outgoingRequestsCount = 0 } = useQuery({
-    queryKey: ['outgoingRequestsCount', currentUser?.id],
-    queryFn: async () => {
-      if (!currentUser) return 0;
-      const { count, error } = await supabase
-        .from('tool_requests')
-        .select('id', { count: 'exact', head: true })
-        .eq('requester_id', currentUser.id)
-        .in('status', ['pending', 'approved']);
-      
-      if (error) {
-        console.error('Error fetching outgoing requests count:', error);
-        return 0;
-      }
-      return count ?? 0;
-    },
-    enabled: !!currentUser
-  });
-
-  // Fetch incoming requests count (requests sent to my tools)
-  const { data: incomingRequestsCount = 0 } = useQuery({
-    queryKey: ['incomingRequestsCount', currentUser?.id],
-    queryFn: async () => {
-      if (!currentUser) return 0;
-      
-      // First get the tools owned by the current user
-      const { data: tools, error: toolsError } = await supabase
-        .from('tools')
-        .select('id')
-        .eq('owner_id', currentUser.id);
-      
-      if (toolsError) {
-        console.error('Error fetching tools for requests count:', toolsError);
-        return 0;
-      }
-      
-      if (!tools || tools.length === 0) return 0;
-      
-      const toolIds = tools.map(tool => tool.id);
-      
-      // Then count requests for those tools
-      const { count, error } = await supabase
-        .from('tool_requests')
-        .select('id', { count: 'exact', head: true })
-        .in('tool_id', toolIds)
-        .in('status', ['pending', 'approved']);
-      
-      if (error) {
-        console.error('Error fetching incoming requests count:', error);
-        return 0;
-      }
-      return count ?? 0;
-    },
-    enabled: !!currentUser
-  });
 
   // Fetch pending invitations
   const { data: invitations = [], refetch: refetchInvitations } = useQuery({
@@ -298,42 +207,6 @@ const Dashboard = () => {
     }
   };
 
-  const stats = [
-    { 
-      title: "My Tools", 
-      value: toolsCount, 
-      icon: <Hammer className="h-5 w-5" />,
-      action: () => navigate("/tools"),
-      actionText: "View Tools"
-    },
-    { 
-      title: "My Groups", 
-      value: groupsCount, 
-      icon: <Users className="h-5 w-5" />,
-      action: () => navigate("/groups"),
-      actionText: "View Groups" 
-    },
-    { 
-      title: "Active Requests", 
-      value: `${outgoingRequestsCount + incomingRequestsCount}`, 
-      icon: <Clock className="h-5 w-5" />,
-      action: () => navigate("/requests"),
-      actionText: "View Requests",
-      subtitle: (
-        <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
-          <div className="flex items-center gap-1">
-            <ArrowUp className="h-3 w-3" />
-            <span>{outgoingRequestsCount} sent</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <ArrowDown className="h-3 w-3" />
-            <span>{incomingRequestsCount} received</span>
-          </div>
-        </div>
-      )
-    },
-  ];
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col space-y-2">
@@ -343,106 +216,65 @@ const Dashboard = () => {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {stats.map((stat, i) => (
-          <Card key={i}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium">
-                {stat.title}
-              </CardTitle>
-              {stat.icon}
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              {stat.subtitle}
-            </CardContent>
-            <CardFooter>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={stat.action}
-              >
-                {stat.actionText}
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
+      <div className="grid gap-6">
+        {/* Active Borrowing Section */}
+        <ActiveBorrowingList />
+        
+        {/* Active Lending Section */}
+        <ActiveLendingList />
+        
+        {/* Pending Actions Section */}
+        <PendingActions />
+        
+        {/* Quick Actions Section */}
+        <QuickActions />
 
-      {/* Pending Invitations Section */}
-      {invitations.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center space-x-2">
-            <UserPlus className="h-5 w-5" />
-            <h2 className="text-xl font-bold">Pending Group Invitations</h2>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            {invitations.map((invitation) => (
-              <Card key={invitation.id} className="border-blue-200 bg-blue-50/50">
-                <CardHeader>
-                  <CardTitle className="text-lg">{invitation.group_name}</CardTitle>
-                  <CardDescription>
-                    {invitation.group_description || "No description provided"}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Invited by <span className="font-medium">{invitation.creator_display_name}</span> on{" "}
-                    {new Date(invitation.created_at).toLocaleDateString()}
-                  </p>
-                </CardContent>
-                <CardFooter className="flex justify-end space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDeclineInvitation(invitation.id)}
-                    disabled={processingId === invitation.id}
-                  >
-                    <X className="mr-2 h-4 w-4" />
-                    Decline
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => handleAcceptInvitation(invitation.id, invitation.group_id)}
-                    disabled={processingId === invitation.id}
-                  >
-                    <Check className="mr-2 h-4 w-4" />
-                    Accept
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="flex flex-col space-y-4">
-        <h2 className="text-xl font-bold">Quick Actions</h2>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Button 
-            onClick={() => navigate("/tools/add")}
-            className="h-auto py-4 text-left flex items-center justify-start space-x-4"
-          >
-            <PlusCircle className="h-5 w-5" /> 
-            <div>
-              <div className="font-semibold">Add a Tool</div>
-              <div className="text-xs text-muted">Share your tools with your groups</div>
+        {/* Pending Invitations Section */}
+        {invitations.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <UserPlus className="h-5 w-5" />
+              <h2 className="text-xl font-bold">Pending Group Invitations</h2>
             </div>
-          </Button>
-          
-          <Button 
-            onClick={() => navigate("/groups/create")}
-            variant="outline"
-            className="h-auto py-4 text-left flex items-center justify-start space-x-4"
-          >
-            <Users className="h-5 w-5" /> 
-            <div>
-              <div className="font-semibold">Create a Group</div>
-              <div className="text-xs text-muted">Start sharing with friends or colleagues</div>
+            <div className="grid gap-4 md:grid-cols-2">
+              {invitations.map((invitation) => (
+                <Card key={invitation.id} className="border-blue-200 bg-blue-50/50">
+                  <CardHeader>
+                    <CardTitle className="text-lg">{invitation.group_name}</CardTitle>
+                    <CardDescription>
+                      {invitation.group_description || "No description provided"}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      Invited by <span className="font-medium">{invitation.creator_display_name}</span> on{" "}
+                      {new Date(invitation.created_at).toLocaleDateString()}
+                    </p>
+                  </CardContent>
+                  <CardFooter className="flex justify-end space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeclineInvitation(invitation.id)}
+                      disabled={processingId === invitation.id}
+                    >
+                      <X className="mr-2 h-4 w-4" />
+                      Decline
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleAcceptInvitation(invitation.id, invitation.group_id)}
+                      disabled={processingId === invitation.id}
+                    >
+                      <Check className="mr-2 h-4 w-4" />
+                      Accept
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
             </div>
-          </Button>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
