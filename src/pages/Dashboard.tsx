@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -186,6 +187,8 @@ const Dashboard = () => {
           .eq('id', invitationId);
           
         refetchInvitations();
+        // Redirect to group details even if already a member
+        navigate(`/groups/${groupId}`);
         return;
       }
       
@@ -214,6 +217,9 @@ const Dashboard = () => {
       });
       
       refetchInvitations();
+      
+      // Redirect to the group details page
+      navigate(`/groups/${groupId}`);
     } catch (error: any) {
       toast({
         title: "Error accepting invitation",

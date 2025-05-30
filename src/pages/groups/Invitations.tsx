@@ -144,6 +144,8 @@ const GroupInvitations = () => {
           .eq('id', invitationId);
           
         refetch();
+        // Redirect to group details even if already a member
+        navigate(`/groups/${groupId}`);
         return;
       }
       
@@ -172,6 +174,9 @@ const GroupInvitations = () => {
       });
       
       refetch();
+      
+      // Redirect to the group details page
+      navigate(`/groups/${groupId}`);
     } catch (error: any) {
       toast({
         title: "Error accepting invitation",
