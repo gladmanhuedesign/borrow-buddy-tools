@@ -20,6 +20,9 @@ import JoinGroup from "./pages/groups/JoinGroup";
 import Requests from "./pages/requests/Requests";
 import RequestDetail from "./pages/requests/RequestDetail";
 import SearchResults from "./pages/SearchResults";
+import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
+import Help from "./pages/Help";
 import { AuthProvider } from "./contexts/AuthContext";
 import RequireAuth from "./components/auth/RequireAuth";
 import Layout from "./components/layout/Layout";
@@ -54,6 +57,9 @@ const App = () => (
                 <Route path="/requests" element={<Requests />} />
                 <Route path="/requests/:id" element={<RequestDetail />} />
                 <Route path="/search" element={<SearchResults />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/help" element={<Help />} />
               </Route>
             </Route>
             <Route path="*" element={<NotFound />} />
