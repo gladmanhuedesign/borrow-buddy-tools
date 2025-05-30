@@ -1,10 +1,11 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   Select,
   SelectContent,
@@ -13,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Upload, Loader2 } from "lucide-react";
+import { ArrowLeft, Upload, Loader2, ChevronDown, ChevronRight } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -53,6 +54,7 @@ const formSchema = z.object({
       "Only .jpg, .jpeg, .png and .webp formats are supported."
     )
     .optional(),
+  hiddenFromGroups: z.array(z.string()).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -60,6 +62,12 @@ type FormValues = z.infer<typeof formSchema>;
 interface ToolCategory {
   id: string;
   name: string;
+}
+
+interface Group {
+  id: string;
+  name: string;
+  description: string | null;
 }
 
 interface Tool {
@@ -77,10 +85,13 @@ const EditTool = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setCategories] = useState<ToolCategory[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  const [loadingGroups, setLoadingGroups] = useState(true);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [tool, setTool] = useState<Tool | null>(null);
   const [loadingTool, setLoadingTool] = useState(true);
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -88,6 +99,7 @@ const EditTool = () => {
       name: "",
       description: "",
       instructions: "",
+      hiddenFromGroups: [],
     },
   });
 
@@ -103,6 +115,47 @@ const EditTool = () => {
       reader.readAsDataURL(imageFile);
     }
   }, [imageFile]);
+
+  useEffect(() => {
+    const fetchUserGroups = async () => {
+      if (!currentUser) return;
+      
+      try {
+        const { data: groupMembers, error } = await supabase
+          .from('group_members')
+          .select(`
+            groups (
+              id,
+              name,
+              description
+            )
+          `)
+          .eq('user_id', currentUser.id);
+
+        if (error) {
+          console.error("Error fetching user groups:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load your groups.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const userGroups = groupMembers
+          ?.map(member => member.groups)
+          .filter(group => group !== null) as Group[];
+        
+        setGroups(userGroups || []);
+      } catch (error) {
+        console.error("Error fetching groups:", error);
+      } finally {
+        setLoadingGroups(false);
+      }
+    };
+    
+    fetchUserGroups();
+  }, [currentUser]);
 
   useEffect(() => {
     const fetchTool = async () => {
@@ -133,11 +186,25 @@ const EditTool = () => {
         form.setValue("name", toolData.name);
         form.setValue("description", toolData.description || "");
         form.setValue("categoryId", toolData.category_id || "");
-        form.setValue("condition", "good" as ToolCondition); // Default since condition isn't in DB
+        form.setValue("condition", "good" as ToolCondition);
         form.setValue("instructions", toolData.description || "");
         
         if (toolData.image_url) {
           setPreviewUrl(toolData.image_url);
+        }
+
+        // Fetch current visibility settings
+        const { data: visibilityData, error: visibilityError } = await supabase
+          .from('tool_group_visibility')
+          .select('group_id')
+          .eq('tool_id', id)
+          .eq('is_hidden', true);
+
+        if (visibilityError) {
+          console.error("Error fetching visibility settings:", visibilityError);
+        } else {
+          const hiddenGroupIds = visibilityData?.map(v => v.group_id) || [];
+          form.setValue("hiddenFromGroups", hiddenGroupIds);
         }
       } catch (error) {
         console.error("Error fetching tool:", error);
@@ -251,6 +318,37 @@ const EditTool = () => {
       if (error) {
         console.error("Error updating tool:", error);
         throw error;
+      }
+
+      // Handle group visibility updates
+      if (groups.length > 0) {
+        // First, remove all existing visibility settings for this tool
+        await supabase
+          .from('tool_group_visibility')
+          .delete()
+          .eq('tool_id', tool.id);
+
+        // Then, insert new visibility settings for hidden groups
+        if (data.hiddenFromGroups && data.hiddenFromGroups.length > 0) {
+          const visibilityInserts = data.hiddenFromGroups.map(groupId => ({
+            tool_id: tool.id,
+            group_id: groupId,
+            is_hidden: true
+          }));
+
+          const { error: visibilityError } = await supabase
+            .from('tool_group_visibility')
+            .insert(visibilityInserts);
+
+          if (visibilityError) {
+            console.error("Error updating group visibility:", visibilityError);
+            toast({
+              title: "Tool updated with warning",
+              description: "Tool was updated but group visibility settings may not have been saved correctly.",
+              variant: "destructive",
+            });
+          }
+        }
       }
       
       toast({
@@ -418,6 +516,86 @@ const EditTool = () => {
               )}
             />
           </div>
+
+          {/* Advanced Group Visibility Settings */}
+          {groups.length > 0 && (
+            <Collapsible open={isAdvancedOpen} onOpenChange={setIsAdvancedOpen}>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" type="button" className="flex items-center gap-2 p-0 h-auto">
+                  {isAdvancedOpen ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                  Advanced: Group Visibility Settings
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4 mt-4 p-4 border rounded-lg">
+                <div className="text-sm text-muted-foreground mb-3">
+                  By default, your tool will be visible to all groups you're a member of. 
+                  Check the boxes below to hide this tool from specific groups.
+                </div>
+                <FormField
+                  control={form.control}
+                  name="hiddenFromGroups"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel>Hide this tool from:</FormLabel>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {loadingGroups ? (
+                          <div className="col-span-full text-center text-muted-foreground">
+                            Loading groups...
+                          </div>
+                        ) : (
+                          groups.map((group) => (
+                            <FormField
+                              key={group.id}
+                              control={form.control}
+                              name="hiddenFromGroups"
+                              render={({ field }) => {
+                                return (
+                                  <FormItem
+                                    key={group.id}
+                                    className="flex flex-row items-start space-x-3 space-y-0"
+                                  >
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={field.value?.includes(group.id)}
+                                        onCheckedChange={(checked) => {
+                                          return checked
+                                            ? field.onChange([...field.value || [], group.id])
+                                            : field.onChange(
+                                                field.value?.filter(
+                                                  (value) => value !== group.id
+                                                )
+                                              )
+                                        }}
+                                      />
+                                    </FormControl>
+                                    <div className="space-y-1 leading-none">
+                                      <FormLabel className="text-sm font-normal">
+                                        {group.name}
+                                      </FormLabel>
+                                      {group.description && (
+                                        <p className="text-xs text-muted-foreground">
+                                          {group.description}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </FormItem>
+                                )
+                              }}
+                            />
+                          ))
+                        )}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CollapsibleContent>
+            </Collapsible>
+          )}
           
           <FormItem>
             <FormLabel>Tool Image</FormLabel>

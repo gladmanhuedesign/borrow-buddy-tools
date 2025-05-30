@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "@/components/ui/use-toast";
-import { ArrowLeft, Upload, Loader2 } from "lucide-react";
+import { ArrowLeft, Upload, Loader2, ChevronDown, ChevronRight } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,9 +39,6 @@ const formSchema = z.object({
   condition: z.nativeEnum(ToolCondition, {
     required_error: "Please select the condition of your tool.",
   }),
-  groupId: z.string({
-    required_error: "Please select a group to share with.",
-  }),
   instructions: z.string().optional(),
   image: z
     .instanceof(File)
@@ -49,6 +48,7 @@ const formSchema = z.object({
       "Only .jpg, .jpeg, .png and .webp formats are supported."
     )
     .optional(),
+  hiddenFromGroups: z.array(z.string()).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -73,6 +73,7 @@ const AddTool = () => {
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -80,6 +81,7 @@ const AddTool = () => {
       name: "",
       description: "",
       instructions: "",
+      hiddenFromGroups: [],
     },
   });
 
@@ -234,7 +236,7 @@ const AddTool = () => {
       }
 
       // Insert tool into database
-      const { error } = await supabase
+      const { data: toolData, error } = await supabase
         .from('tools')
         .insert({
           name: data.name,
@@ -243,11 +245,36 @@ const AddTool = () => {
           owner_id: currentUser.id,
           image_url: imageUrl,
           status: 'available'
-        });
+        })
+        .select('id')
+        .single();
 
       if (error) {
         console.error("Error creating tool:", error);
         throw error;
+      }
+
+      // Handle group visibility settings if user has groups and has hidden the tool from some
+      if (groups.length > 0 && data.hiddenFromGroups && data.hiddenFromGroups.length > 0) {
+        const visibilityInserts = data.hiddenFromGroups.map(groupId => ({
+          tool_id: toolData.id,
+          group_id: groupId,
+          is_hidden: true
+        }));
+
+        const { error: visibilityError } = await supabase
+          .from('tool_group_visibility')
+          .insert(visibilityInserts);
+
+        if (visibilityError) {
+          console.error("Error setting group visibility:", visibilityError);
+          // Don't fail the entire operation for visibility settings
+          toast({
+            title: "Tool created with warning",
+            description: "Tool was created but group visibility settings may not have been saved correctly.",
+            variant: "destructive",
+          });
+        }
       }
       
       toast({
@@ -400,50 +427,85 @@ const AddTool = () => {
             )}
           />
           
-          <FormField
-            control={form.control}
-            name="groupId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Share With Group</FormLabel>
-                <FormControl>
-                  <RadioGroup
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-3"
-                    disabled={loadingGroups || groups.length === 0}
-                  >
-                    {loadingGroups ? (
-                      <div className="col-span-full text-center text-muted-foreground">
-                        Loading groups...
+          {/* Advanced Group Visibility Settings */}
+          {groups.length > 0 && (
+            <Collapsible open={isAdvancedOpen} onOpenChange={setIsAdvancedOpen}>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" type="button" className="flex items-center gap-2 p-0 h-auto">
+                  {isAdvancedOpen ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                  Advanced: Group Visibility Settings
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4 mt-4 p-4 border rounded-lg">
+                <div className="text-sm text-muted-foreground mb-3">
+                  By default, your tool will be visible to all groups you're a member of. 
+                  Check the boxes below to hide this tool from specific groups.
+                </div>
+                <FormField
+                  control={form.control}
+                  name="hiddenFromGroups"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel>Hide this tool from:</FormLabel>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {loadingGroups ? (
+                          <div className="col-span-full text-center text-muted-foreground">
+                            Loading groups...
+                          </div>
+                        ) : (
+                          groups.map((group) => (
+                            <FormField
+                              key={group.id}
+                              control={form.control}
+                              name="hiddenFromGroups"
+                              render={({ field }) => {
+                                return (
+                                  <FormItem
+                                    key={group.id}
+                                    className="flex flex-row items-start space-x-3 space-y-0"
+                                  >
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={field.value?.includes(group.id)}
+                                        onCheckedChange={(checked) => {
+                                          return checked
+                                            ? field.onChange([...field.value || [], group.id])
+                                            : field.onChange(
+                                                field.value?.filter(
+                                                  (value) => value !== group.id
+                                                )
+                                              )
+                                        }}
+                                      />
+                                    </FormControl>
+                                    <div className="space-y-1 leading-none">
+                                      <FormLabel className="text-sm font-normal">
+                                        {group.name}
+                                      </FormLabel>
+                                      {group.description && (
+                                        <p className="text-xs text-muted-foreground">
+                                          {group.description}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </FormItem>
+                                )
+                              }}
+                            />
+                          ))
+                        )}
                       </div>
-                    ) : groups.length === 0 ? (
-                      <div className="col-span-full text-center text-muted-foreground">
-                        You need to create or join a group first
-                      </div>
-                    ) : (
-                      groups.map((group) => (
-                        <div key={group.id} className="flex items-center space-x-2">
-                          <RadioGroupItem
-                            value={group.id}
-                            id={group.id}
-                            className="peer sr-only"
-                          />
-                          <label
-                            htmlFor={group.id}
-                            className="flex-1 cursor-pointer rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium text-center transition-colors hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground"
-                          >
-                            {group.name}
-                          </label>
-                        </div>
-                      ))
-                    )}
-                  </RadioGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CollapsibleContent>
+            </Collapsible>
+          )}
           
           <FormItem>
             <FormLabel>Tool Image</FormLabel>
@@ -504,7 +566,7 @@ const AddTool = () => {
           
           <Button
             type="submit"
-            disabled={isLoading || loadingGroups || loadingCategories || groups.length === 0 || categories.length === 0}
+            disabled={isLoading || loadingCategories || categories.length === 0}
             className="w-full"
           >
             {isLoading ? (
