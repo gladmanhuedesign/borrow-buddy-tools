@@ -13,15 +13,9 @@ type Invitation = {
   group_id: string;
   email: string;
   created_at: string;
-  groups: {
-    id: string;
-    name: string;
-    description: string | null;
-    creator_id: string;
-  };
-  creator: {
-    display_name: string;
-  };
+  group_name: string;
+  group_description: string | null;
+  creator_display_name: string;
 };
 
 const Dashboard = () => {
@@ -94,33 +88,54 @@ const Dashboard = () => {
     queryFn: async () => {
       if (!currentUser?.email) return [];
 
-      const { data, error } = await supabase
+      // First get the invitations
+      const { data: inviteData, error: inviteError } = await supabase
         .from('group_invites')
-        .select(`
-          id, 
-          group_id, 
-          email, 
-          created_at,
-          groups:group_id (
-            id,
-            name, 
-            description,
-            creator_id
-          ),
-          creator:created_by (
-            display_name
-          )
-        `)
+        .select('id, group_id, email, created_at, created_by')
         .eq('email', currentUser.email)
         .neq('email', '*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching invitations:', error);
+      if (inviteError) {
+        console.error('Error fetching invitations:', inviteError);
         return [];
       }
 
-      return data as Invitation[];
+      if (!inviteData || inviteData.length === 0) return [];
+
+      // Then get group details and creator info separately to avoid RLS issues
+      const groupIds = inviteData.map(invite => invite.group_id);
+      const creatorIds = inviteData.map(invite => invite.created_by);
+
+      const [groupsResponse, creatorsResponse] = await Promise.all([
+        supabase
+          .from('groups')
+          .select('id, name, description')
+          .in('id', groupIds),
+        supabase
+          .from('profiles')
+          .select('id, display_name')
+          .in('id', creatorIds)
+      ]);
+
+      // Create lookup maps
+      const groupsMap = new Map(
+        (groupsResponse.data || []).map(group => [group.id, group])
+      );
+      const creatorsMap = new Map(
+        (creatorsResponse.data || []).map(creator => [creator.id, creator])
+      );
+
+      // Combine the data
+      return inviteData.map(invite => ({
+        id: invite.id,
+        group_id: invite.group_id,
+        email: invite.email,
+        created_at: invite.created_at,
+        group_name: groupsMap.get(invite.group_id)?.name || 'Unknown Group',
+        group_description: groupsMap.get(invite.group_id)?.description || null,
+        creator_display_name: creatorsMap.get(invite.created_by)?.display_name || 'Unknown User'
+      })) as Invitation[];
     },
     enabled: !!currentUser?.email
   });
@@ -311,14 +326,14 @@ const Dashboard = () => {
             {invitations.map((invitation) => (
               <Card key={invitation.id} className="border-blue-200 bg-blue-50/50">
                 <CardHeader>
-                  <CardTitle className="text-lg">{invitation.groups.name}</CardTitle>
+                  <CardTitle className="text-lg">{invitation.group_name}</CardTitle>
                   <CardDescription>
-                    {invitation.groups.description || "No description provided"}
+                    {invitation.group_description || "No description provided"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    Invited by <span className="font-medium">{invitation.creator.display_name}</span> on{" "}
+                    Invited by <span className="font-medium">{invitation.creator_display_name}</span> on{" "}
                     {new Date(invitation.created_at).toLocaleDateString()}
                   </p>
                 </CardContent>
