@@ -69,6 +69,23 @@ export interface ToolRequest {
   return_notes?: string;
 }
 
+// Tool History related types
+export interface ToolHistory {
+  id: string;
+  toolId: string;
+  requestId: string;
+  borrowerId: string;
+  ownerId: string;
+  actionType: 'pending' | 'approved' | 'denied' | 'picked_up' | 'return_pending' | 'returned' | 'canceled' | 'overdue';
+  actionBy: string;
+  startDate?: string;
+  endDate?: string;
+  actualPickupDate?: string;
+  actualReturnDate?: string;
+  notes?: string;
+  createdAt: string;
+}
+
 export interface Message {
   id: string;
   requestId: string;

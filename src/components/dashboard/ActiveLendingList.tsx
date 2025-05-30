@@ -8,10 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { format, isPast } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 export const ActiveLendingList = () => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   const { data: lentTools = [], refetch } = useQuery({
@@ -126,6 +128,14 @@ export const ActiveLendingList = () => {
               </div>
               
               <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => navigate(`/tools/${tool.id}`)}
+                >
+                  View History
+                </Button>
+                
                 {request.status === 'return_pending' && (
                   <Button
                     size="sm"

@@ -206,6 +206,90 @@ export type Database = {
         }
         Relationships: []
       }
+      tool_history: {
+        Row: {
+          action_by: string
+          action_type: string
+          actual_pickup_date: string | null
+          actual_return_date: string | null
+          borrower_id: string
+          created_at: string
+          end_date: string | null
+          id: string
+          notes: string | null
+          owner_id: string
+          request_id: string
+          start_date: string | null
+          tool_id: string
+        }
+        Insert: {
+          action_by: string
+          action_type: string
+          actual_pickup_date?: string | null
+          actual_return_date?: string | null
+          borrower_id: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          owner_id: string
+          request_id: string
+          start_date?: string | null
+          tool_id: string
+        }
+        Update: {
+          action_by?: string
+          action_type?: string
+          actual_pickup_date?: string | null
+          actual_return_date?: string | null
+          borrower_id?: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          request_id?: string
+          start_date?: string | null
+          tool_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tool_history_action_by_fkey"
+            columns: ["action_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tool_history_borrower_id_fkey"
+            columns: ["borrower_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tool_history_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tool_history_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "tool_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tool_history_tool_id_fkey"
+            columns: ["tool_id"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tool_requests: {
         Row: {
           created_at: string

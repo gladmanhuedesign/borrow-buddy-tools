@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -30,6 +29,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { ToolHistory } from "@/components/tools/ToolHistory";
 
 const requestFormSchema = z.object({
   notes: z.string().optional(),
@@ -411,6 +411,9 @@ const ToolDetail = () => {
           </Card>
         </div>
       </div>
+
+      {/* Add Tool History Section */}
+      <ToolHistory toolId={tool.id} />
     </div>
   );
 };
