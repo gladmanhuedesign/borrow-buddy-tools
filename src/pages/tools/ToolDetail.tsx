@@ -8,7 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tool } from "@/types";
-import { defaultToolCategories, toolConditionLabels, toolStatusLabels } from "@/config/toolCategories";
+import { toolConditionLabels, toolStatusLabels } from "@/config/toolCategories";
 import { ArrowLeft, AlertCircle, Clock, Loader2 } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -39,6 +39,11 @@ const requestFormSchema = z.object({
 
 type RequestFormValues = z.infer<typeof requestFormSchema>;
 
+interface ToolCategory {
+  id: string;
+  name: string;
+}
+
 const ToolDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -48,6 +53,7 @@ const ToolDetail = () => {
   const [isOwner, setIsOwner] = useState(false);
   const [requestDialogOpen, setRequestDialogOpen] = useState(false);
   const [requesting, setRequesting] = useState(false);
+  const [categories, setCategories] = useState<ToolCategory[]>([]);
 
   const requestForm = useForm<RequestFormValues>({
     resolver: zodResolver(requestFormSchema),
@@ -57,6 +63,27 @@ const ToolDetail = () => {
       endDate: "",
     },
   });
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const { data: categoriesData, error } = await supabase
+          .from('tool_categories')
+          .select('id, name');
+
+        if (error) {
+          console.error("Error fetching categories:", error);
+          return;
+        }
+
+        setCategories(categoriesData || []);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+    
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     const fetchToolDetails = async () => {
@@ -197,7 +224,7 @@ const ToolDetail = () => {
   }
 
   // Find category by ID
-  const category = defaultToolCategories.find(c => c.id === tool.categoryId);
+  const category = categories.find(c => c.id === tool.categoryId);
 
   // Get today's date for min date validation
   const today = new Date().toISOString().split('T')[0];
