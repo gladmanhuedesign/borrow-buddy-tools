@@ -10,6 +10,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToolSearch } from "@/hooks/useToolSearch";
+import { useFilterOptions } from "@/hooks/useFilterOptions";
 import { cn } from "@/lib/utils";
 
 const SearchResults = () => {
@@ -27,27 +28,34 @@ const SearchResults = () => {
     searchTerm.length >= 2
   );
 
-  // Get unique values for filters
-  const uniqueCategories = useMemo(() => {
+  const { data: filterOptions = { categories: [], groups: [], statuses: [] } } = useFilterOptions();
+
+  // Get unique values for filters from search results (for dynamic filtering)
+  const searchBasedCategories = useMemo(() => {
     const categories = searchResults
       .map(tool => tool.category_name)
       .filter(Boolean);
     return [...new Set(categories)] as string[];
   }, [searchResults]);
 
-  const uniqueGroups = useMemo(() => {
+  const searchBasedGroups = useMemo(() => {
     const groups = searchResults
       .map(tool => tool.group_name)
       .filter(Boolean);
     return [...new Set(groups)] as string[];
   }, [searchResults]);
 
-  const uniqueStatuses = useMemo(() => {
+  const searchBasedStatuses = useMemo(() => {
     const statuses = searchResults
       .map(tool => tool.status)
       .filter(Boolean);
     return [...new Set(statuses)] as string[];
   }, [searchResults]);
+
+  // Use search-based filters if we have search results, otherwise use default filter options
+  const availableCategories = searchTerm && searchResults.length > 0 ? searchBasedCategories : filterOptions.categories;
+  const availableGroups = searchTerm && searchResults.length > 0 ? searchBasedGroups : filterOptions.groups;
+  const availableStatuses = searchTerm && searchResults.length > 0 ? searchBasedStatuses : filterOptions.statuses;
 
   // Apply filters
   const filteredResults = useMemo(() => {
@@ -132,7 +140,7 @@ const SearchResults = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
-              {uniqueCategories.map(category => (
+              {availableCategories.map(category => (
                 <SelectItem key={category} value={category}>
                   {category}
                 </SelectItem>
@@ -146,7 +154,7 @@ const SearchResults = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Groups</SelectItem>
-              {uniqueGroups.map(group => (
+              {availableGroups.map(group => (
                 <SelectItem key={group} value={group}>
                   {group}
                 </SelectItem>
@@ -160,7 +168,7 @@ const SearchResults = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
-              {uniqueStatuses.map(status => (
+              {availableStatuses.map(status => (
                 <SelectItem key={status} value={status}>
                   {status.charAt(0).toUpperCase() + status.slice(1)}
                 </SelectItem>
