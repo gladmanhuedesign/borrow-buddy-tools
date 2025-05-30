@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { ToolRequest } from "@/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Inbox, SendHorizonal } from "lucide-react";
+import { Inbox, SendHorizonal, RefreshCw } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -37,6 +37,7 @@ interface RequestWithDetails {
     id: string;
     name: string;
     owner_id: string;
+    status: string;
     profiles: {
       display_name: string;
     } | null;
@@ -53,139 +54,115 @@ const Requests = () => {
   const [receivedRequests, setReceivedRequests] = useState<RequestWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchRequests = async () => {
     if (!currentUser) return;
 
-    const fetchRequests = async () => {
-      try {
-        console.log("Fetching requests for user:", currentUser.id);
+    try {
+      console.log("Fetching requests for user:", currentUser.id);
 
-        // Fetch requests sent by the current user
-        const { data: sentData, error: sentError } = await supabase
-          .from('tool_requests')
-          .select(`
+      // First, run the overdue check
+      await supabase.rpc('mark_overdue_requests');
+
+      // Fetch requests sent by the current user
+      const { data: sentData, error: sentError } = await supabase
+        .from('tool_requests')
+        .select(`
+          id,
+          status,
+          start_date,
+          end_date,
+          message,
+          created_at,
+          tools (
             id,
+            name,
+            owner_id,
             status,
-            start_date,
-            end_date,
-            message,
-            created_at,
-            tools (
-              id,
-              name,
-              owner_id,
-              profiles:owner_id (
-                display_name
-              )
-            )
-          `)
-          .eq('requester_id', currentUser.id)
-          .order('created_at', { ascending: false });
-
-        if (sentError) {
-          console.error("Error fetching sent requests:", sentError);
-          throw sentError;
-        }
-
-        console.log("Sent requests data:", sentData);
-        // Transform data to match RequestWithDetails interface and cast status
-        const transformedSentData = (sentData || []).map(request => ({
-          ...request,
-          status: request.status as ToolRequest["status"],
-          profiles: null // For sent requests, profiles is null at root level
-        }));
-        setSentRequests(transformedSentData);
-
-        // Fetch requests received by the current user (requests for their tools)
-        const { data: receivedData, error: receivedError } = await supabase
-          .from('tool_requests')
-          .select(`
-            id,
-            status,
-            start_date,
-            end_date,
-            message,
-            created_at,
-            requester_id,
-            tools!inner (
-              id,
-              name,
-              owner_id
-            ),
-            profiles:requester_id (
+            profiles:owner_id (
               display_name
             )
-          `)
-          .eq('tools.owner_id', currentUser.id)
-          .order('created_at', { ascending: false });
+          )
+        `)
+        .eq('requester_id', currentUser.id)
+        .order('created_at', { ascending: false });
 
-        if (receivedError) {
-          console.error("Error fetching received requests:", receivedError);
-          throw receivedError;
-        }
-
-        console.log("Received requests data:", receivedData);
-        // Transform data to match RequestWithDetails interface and cast status
-        const transformedReceivedData = (receivedData || []).map(request => ({
-          ...request,
-          status: request.status as ToolRequest["status"],
-          tools: request.tools ? {
-            ...request.tools,
-            profiles: null // Tool owner profiles not needed for received requests
-          } : null
-        }));
-        setReceivedRequests(transformedReceivedData);
-        
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching requests:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load requests.",
-          variant: "destructive",
-        });
-        setLoading(false);
+      if (sentError) {
+        console.error("Error fetching sent requests:", sentError);
+        throw sentError;
       }
-    };
-    
-    fetchRequests();
-  }, [currentUser]);
 
-  const handleApprove = async (requestId: string) => {
-    try {
-      const { error } = await supabase
+      console.log("Sent requests data:", sentData);
+      const transformedSentData = (sentData || []).map(request => ({
+        ...request,
+        status: request.status as ToolRequest["status"],
+        profiles: null
+      }));
+      setSentRequests(transformedSentData);
+
+      // Fetch requests received by the current user (requests for their tools)
+      const { data: receivedData, error: receivedError } = await supabase
         .from('tool_requests')
-        .update({ status: 'approved' })
-        .eq('id', requestId);
+        .select(`
+          id,
+          status,
+          start_date,
+          end_date,
+          message,
+          created_at,
+          requester_id,
+          tools!inner (
+            id,
+            name,
+            owner_id,
+            status
+          ),
+          profiles:requester_id (
+            display_name
+          )
+        `)
+        .eq('tools.owner_id', currentUser.id)
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (receivedError) {
+        console.error("Error fetching received requests:", receivedError);
+        throw receivedError;
+      }
 
-      // Update local state
-      setReceivedRequests(prev => 
-        prev.map(req => 
-          req.id === requestId ? { ...req, status: 'approved' as ToolRequest["status"] } : req
-        )
-      );
-
-      toast({
-        title: "Request approved",
-        description: "The request has been approved.",
-      });
+      console.log("Received requests data:", receivedData);
+      const transformedReceivedData = (receivedData || []).map(request => ({
+        ...request,
+        status: request.status as ToolRequest["status"],
+        tools: request.tools ? {
+          ...request.tools,
+          profiles: null
+        } : null
+      }));
+      setReceivedRequests(transformedReceivedData);
+      
+      setLoading(false);
     } catch (error) {
-      console.error("Error approving request:", error);
+      console.error("Error fetching requests:", error);
       toast({
         title: "Error",
-        description: "Failed to approve request.",
+        description: "Failed to load requests.",
         variant: "destructive",
       });
+      setLoading(false);
     }
   };
 
-  const handleDeny = async (requestId: string) => {
+  useEffect(() => {
+    fetchRequests();
+  }, [currentUser]);
+
+  const handleQuickAction = async (requestId: string, action: 'approve' | 'deny') => {
     try {
       const { error } = await supabase
         .from('tool_requests')
-        .update({ status: 'denied' })
+        .update({ 
+          status: action === 'approve' ? 'approved' : 'denied',
+          updated_at: new Date().toISOString()
+        })
         .eq('id', requestId);
 
       if (error) throw error;
@@ -193,19 +170,19 @@ const Requests = () => {
       // Update local state
       setReceivedRequests(prev => 
         prev.map(req => 
-          req.id === requestId ? { ...req, status: 'denied' as ToolRequest["status"] } : req
+          req.id === requestId ? { ...req, status: (action === 'approve' ? 'approved' : 'denied') as ToolRequest["status"] } : req
         )
       );
 
       toast({
-        title: "Request denied",
-        description: "The request has been denied.",
+        title: `Request ${action}d`,
+        description: `The request has been ${action}d.`,
       });
     } catch (error) {
-      console.error("Error denying request:", error);
+      console.error(`Error ${action}ing request:`, error);
       toast({
         title: "Error",
-        description: "Failed to deny request.",
+        description: `Failed to ${action} request.`,
         variant: "destructive",
       });
     }
@@ -231,17 +208,42 @@ const Requests = () => {
     </Card>
   );
 
+  const getStatusColor = (status: ToolRequest["status"]) => {
+    switch (status) {
+      case 'pending': return 'text-yellow-600';
+      case 'approved': return 'text-green-600';
+      case 'denied': return 'text-red-600';
+      case 'returned': return 'text-blue-600';
+      case 'canceled': return 'text-gray-600';
+      case 'overdue': return 'text-red-800';
+      default: return 'text-gray-600';
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Tool Requests</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Tool Requests</h1>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={fetchRequests}
+          disabled={loading}
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
 
       <Tabs defaultValue="outgoing" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="outgoing" className="flex gap-2 items-center">
-            <SendHorizonal className="h-4 w-4" /> Sent by Me
+            <SendHorizonal className="h-4 w-4" /> 
+            Sent by Me ({sentRequests.length})
           </TabsTrigger>
           <TabsTrigger value="incoming" className="flex gap-2 items-center">
-            <Inbox className="h-4 w-4" /> Received
+            <Inbox className="h-4 w-4" /> 
+            Received ({receivedRequests.length})
           </TabsTrigger>
         </TabsList>
         
@@ -265,14 +267,24 @@ const Requests = () => {
                             Requested from {request.tools?.profiles?.display_name || "Unknown Owner"}
                           </CardDescription>
                         </div>
-                        <RequestStatusBadge status={request.status} />
+                        <div className="flex flex-col items-end gap-1">
+                          <RequestStatusBadge status={request.status} />
+                          <Badge variant="outline" className="text-xs">
+                            Tool: {request.tools?.status}
+                          </Badge>
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">
-                          Requested on {new Date(request.created_at).toLocaleDateString()}
-                        </span>
+                      <div className="flex justify-between items-center text-sm">
+                        <div className="space-y-1">
+                          <span className="text-muted-foreground">
+                            Requested on {new Date(request.created_at).toLocaleDateString()}
+                          </span>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(request.start_date).toLocaleDateString()} - {new Date(request.end_date).toLocaleDateString()}
+                          </div>
+                        </div>
                         <Button variant="ghost" size="sm">
                           View Details
                         </Button>
@@ -304,14 +316,24 @@ const Requests = () => {
                           Requested by {request.profiles?.display_name || "Unknown User"}
                         </CardDescription>
                       </div>
-                      <RequestStatusBadge status={request.status} />
+                      <div className="flex flex-col items-end gap-1">
+                        <RequestStatusBadge status={request.status} />
+                        <Badge variant="outline" className="text-xs">
+                          Tool: {request.tools?.status}
+                        </Badge>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <div className="flex justify-between items-center text-sm">
-                      <span className="text-muted-foreground">
-                        Requested on {new Date(request.created_at).toLocaleDateString()}
-                      </span>
+                      <div className="space-y-1">
+                        <span className="text-muted-foreground">
+                          Requested on {new Date(request.created_at).toLocaleDateString()}
+                        </span>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(request.start_date).toLocaleDateString()} - {new Date(request.end_date).toLocaleDateString()}
+                        </div>
+                      </div>
                       <div className="flex gap-2">
                         {request.status === "pending" ? (
                           <>
@@ -320,7 +342,7 @@ const Requests = () => {
                               size="sm" 
                               onClick={(e) => {
                                 e.preventDefault();
-                                handleDeny(request.id);
+                                handleQuickAction(request.id, 'deny');
                               }}
                             >
                               Deny
@@ -329,7 +351,7 @@ const Requests = () => {
                               size="sm"
                               onClick={(e) => {
                                 e.preventDefault();
-                                handleApprove(request.id);
+                                handleQuickAction(request.id, 'approve');
                               }}
                             >
                               Approve
