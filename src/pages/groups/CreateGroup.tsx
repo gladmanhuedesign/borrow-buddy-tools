@@ -61,6 +61,8 @@ const CreateGroup = () => {
     try {
       setIsLoading(true);
       
+      console.log("Creating group with user ID:", currentUser.id);
+      
       // Insert the new group
       const { data: newGroup, error: groupError } = await supabase
         .from('groups')
@@ -73,7 +75,12 @@ const CreateGroup = () => {
         .select()
         .single();
       
-      if (groupError) throw groupError;
+      if (groupError) {
+        console.error("Group creation error:", groupError);
+        throw groupError;
+      }
+      
+      console.log("Group created successfully:", newGroup);
       
       // Add the creator as a member with 'admin' role
       const { error: memberError } = await supabase
@@ -84,7 +91,12 @@ const CreateGroup = () => {
           role: 'admin'
         });
       
-      if (memberError) throw memberError;
+      if (memberError) {
+        console.error("Member insertion error:", memberError);
+        throw memberError;
+      }
+      
+      console.log("Creator added as admin member successfully");
       
       toast({
         title: "Group created successfully",
@@ -94,12 +106,12 @@ const CreateGroup = () => {
       // Navigate to the new group
       navigate(`/groups/${newGroup.id}`);
     } catch (error: any) {
+      console.error("Full error details:", error);
       toast({
         title: "Failed to create group",
         description: error.message || "An error occurred while creating the group.",
         variant: "destructive",
       });
-      console.error("Group creation error:", error);
     } finally {
       setIsLoading(false);
     }
