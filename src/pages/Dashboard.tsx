@@ -1,15 +1,34 @@
-
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Hammer, Users, PlusCircle, Clock } from "lucide-react";
+import { Hammer, Users, PlusCircle, Clock, Check, X, UserPlus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
+
+type Invitation = {
+  id: string;
+  group_id: string;
+  email: string;
+  created_at: string;
+  groups: {
+    id: string;
+    name: string;
+    description: string | null;
+    creator_id: string;
+  };
+  creator: {
+    display_name: string;
+  };
+};
 
 const Dashboard = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   // Fetch tools count
   const { data: toolsCount = 0 } = useQuery({
@@ -69,6 +88,159 @@ const Dashboard = () => {
     enabled: !!currentUser
   });
 
+  // Fetch pending invitations
+  const { data: invitations = [], refetch: refetchInvitations } = useQuery({
+    queryKey: ['dashboard-invitations', currentUser?.email],
+    queryFn: async () => {
+      if (!currentUser?.email) return [];
+
+      const { data, error } = await supabase
+        .from('group_invites')
+        .select(`
+          id, 
+          group_id, 
+          email, 
+          created_at,
+          groups:group_id (
+            id,
+            name, 
+            description,
+            creator_id
+          ),
+          creator:created_by (
+            display_name
+          )
+        `)
+        .eq('email', currentUser.email)
+        .neq('email', '*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching invitations:', error);
+        return [];
+      }
+
+      return data as Invitation[];
+    },
+    enabled: !!currentUser?.email
+  });
+
+  // Set up real-time subscription for invitations
+  useEffect(() => {
+    if (!currentUser?.email) return;
+
+    const channel = supabase
+      .channel('dashboard-invitation-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'group_invites' }, 
+        () => {
+          refetchInvitations();
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser?.email, refetchInvitations]);
+
+  const handleAcceptInvitation = async (invitationId: string, groupId: string) => {
+    if (!currentUser) return;
+    
+    setProcessingId(invitationId);
+    
+    try {
+      // Check if user is already a member
+      const { data: existingMember } = await supabase
+        .from('group_members')
+        .select('id')
+        .eq('user_id', currentUser.id)
+        .eq('group_id', groupId)
+        .single();
+      
+      if (existingMember) {
+        toast({
+          title: "Already a member",
+          description: "You are already a member of this group.",
+        });
+        
+        // Delete the invitation since it's no longer needed
+        await supabase
+          .from('group_invites')
+          .delete()
+          .eq('id', invitationId);
+          
+        refetchInvitations();
+        return;
+      }
+      
+      // Join the group as a member
+      const { error: memberError } = await supabase
+        .from('group_members')
+        .insert({
+          group_id: groupId,
+          user_id: currentUser.id,
+          role: 'member'
+        });
+      
+      if (memberError) throw memberError;
+      
+      // Delete the invitation
+      const { error: deleteError } = await supabase
+        .from('group_invites')
+        .delete()
+        .eq('id', invitationId);
+      
+      if (deleteError) throw deleteError;
+      
+      toast({
+        title: "Invitation accepted",
+        description: "You have successfully joined the group.",
+      });
+      
+      refetchInvitations();
+    } catch (error: any) {
+      toast({
+        title: "Error accepting invitation",
+        description: error.message || "An error occurred while accepting the invitation.",
+        variant: "destructive",
+      });
+      console.error('Accept invitation error:', error);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleDeclineInvitation = async (invitationId: string) => {
+    setProcessingId(invitationId);
+    
+    try {
+      // Delete the invitation
+      const { error } = await supabase
+        .from('group_invites')
+        .delete()
+        .eq('id', invitationId);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Invitation declined",
+        description: "The invitation has been declined.",
+      });
+      
+      refetchInvitations();
+    } catch (error: any) {
+      toast({
+        title: "Error declining invitation",
+        description: error.message || "An error occurred while declining the invitation.",
+        variant: "destructive",
+      });
+      console.error('Decline invitation error:', error);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   const stats = [
     { 
       title: "My Tools", 
@@ -127,6 +299,53 @@ const Dashboard = () => {
           </Card>
         ))}
       </div>
+
+      {/* Pending Invitations Section */}
+      {invitations.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <UserPlus className="h-5 w-5" />
+            <h2 className="text-xl font-bold">Pending Group Invitations</h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {invitations.map((invitation) => (
+              <Card key={invitation.id} className="border-blue-200 bg-blue-50/50">
+                <CardHeader>
+                  <CardTitle className="text-lg">{invitation.groups.name}</CardTitle>
+                  <CardDescription>
+                    {invitation.groups.description || "No description provided"}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Invited by <span className="font-medium">{invitation.creator.display_name}</span> on{" "}
+                    {new Date(invitation.created_at).toLocaleDateString()}
+                  </p>
+                </CardContent>
+                <CardFooter className="flex justify-end space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDeclineInvitation(invitation.id)}
+                    disabled={processingId === invitation.id}
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Decline
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => handleAcceptInvitation(invitation.id, invitation.group_id)}
+                    disabled={processingId === invitation.id}
+                  >
+                    <Check className="mr-2 h-4 w-4" />
+                    Accept
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col space-y-4">
         <h2 className="text-xl font-bold">Quick Actions</h2>
