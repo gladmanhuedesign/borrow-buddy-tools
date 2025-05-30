@@ -11,6 +11,7 @@ import { ActiveBorrowingList } from "@/components/dashboard/ActiveBorrowingList"
 import { ActiveLendingList } from "@/components/dashboard/ActiveLendingList";
 import { PendingActions } from "@/components/dashboard/PendingActions";
 import { QuickActions } from "@/components/dashboard/QuickActions";
+import { NewToolsFeed } from "@/components/dashboard/NewToolsFeed";
 
 type Invitation = {
   id: string;
@@ -223,6 +224,9 @@ const Dashboard = () => {
           <ActiveLendingList />
           <PendingActions />
         </div>
+        
+        {/* New Tools Feed Section */}
+        <NewToolsFeed />
         
         {/* Quick Actions Section */}
         <QuickActions />
