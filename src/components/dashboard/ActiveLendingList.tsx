@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { format, isPast } from "date-fns";
@@ -42,7 +43,8 @@ export const ActiveLendingList = () => {
           tools (
             id,
             name,
-            description
+            description,
+            image_url
           ),
           profiles (
             display_name
@@ -114,7 +116,12 @@ export const ActiveLendingList = () => {
           return (
             <div key={request.id} className="p-4 border rounded-lg">
               <div className="space-y-3">
-                <div className="flex items-start justify-between">
+                <div className="flex items-start gap-3">
+                  <Avatar className="h-12 w-12 flex-shrink-0">
+                    <AvatarImage src={tool.image_url || ''} alt={tool.name} />
+                    <AvatarFallback>{tool.name.charAt(0).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="font-medium truncate">{tool.name}</h4>
