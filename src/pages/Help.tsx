@@ -11,7 +11,6 @@ import {
   HelpCircle, 
   ChevronDown, 
   Mail, 
-  Phone, 
   MessageCircle,
   BookOpen,
   Users,
@@ -63,10 +62,11 @@ const Help = () => {
       return;
     }
 
-    // Simulate sending the message
+    // Note: This is currently a demo form. In a real application, 
+    // this would send the message to a support system or email service.
     toast({
-      title: "Message sent",
-      description: "Thank you for contacting us. We'll get back to you soon!",
+      title: "Message received",
+      description: "Your message has been recorded. This is currently a demo - no actual email will be sent.",
     });
     
     setContactForm({ subject: '', message: '' });
@@ -195,20 +195,11 @@ const Help = () => {
             <CardTitle>Other Ways to Get Help</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="flex items-center gap-3 p-4 border rounded-lg">
-                <Mail className="h-5 w-5 text-primary" />
-                <div>
-                  <h4 className="font-medium">Email Support</h4>
-                  <p className="text-sm text-muted-foreground">support@toolshare.com</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-4 border rounded-lg">
-                <Phone className="h-5 w-5 text-primary" />
-                <div>
-                  <h4 className="font-medium">Phone Support</h4>
-                  <p className="text-sm text-muted-foreground">1-800-TOOLSHARE</p>
-                </div>
+            <div className="flex items-center gap-3 p-4 border rounded-lg">
+              <Mail className="h-5 w-5 text-primary" />
+              <div>
+                <h4 className="font-medium">Email Support</h4>
+                <p className="text-sm text-muted-foreground">support@toolshare.com</p>
               </div>
             </div>
           </CardContent>
