@@ -10,10 +10,8 @@ const Layout = () => {
   return (
     <div className="min-h-screen bg-background">
       <TopHeader />
-      <main className="saas-container pb-20 pt-8">
-        <div className="animate-fade-in">
-          <Outlet />
-        </div>
+      <main className="container mx-auto pb-20 pt-6 px-4">
+        <Outlet />
       </main>
       <MobileNavigation />
     </div>

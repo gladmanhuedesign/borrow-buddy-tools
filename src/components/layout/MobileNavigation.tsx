@@ -56,7 +56,7 @@ const MobileNavigation = () => {
       icon: <Home className="h-5 w-5" />,
       href: "/dashboard",
       notification: unreadCount > 0 ? (
-        <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]">
+        <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
           {unreadCount > 99 ? '99+' : unreadCount}
         </Badge>
       ) : null
@@ -71,7 +71,7 @@ const MobileNavigation = () => {
       icon: <UsersRound className="h-5 w-5" />,
       href: "/groups",
       notification: invitationCount > 0 ? (
-        <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]">
+        <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
           {invitationCount}
         </Badge>
       ) : null
@@ -84,24 +84,24 @@ const MobileNavigation = () => {
   ];
   
   return (
-    <nav className="fixed bottom-0 left-0 z-40 w-full saas-nav md:hidden">
-      <div className="grid grid-cols-4 h-16">
+    <nav className="fixed bottom-0 left-0 z-40 w-full border-t bg-background md:hidden">
+      <div className="grid grid-cols-4">
         {navItems.map((item) => (
           <Link
             key={item.href}
             to={item.href}
             className={cn(
-              "flex flex-col items-center justify-center py-2 transition-colors duration-200",
+              "flex flex-col items-center justify-center py-2",
               location.pathname === item.href
-                ? "text-primary bg-primary/5"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             <span className="relative">
               {item.icon}
               {item.notification}
             </span>
-            <span className="text-xs font-medium mt-1">{item.label}</span>
+            <span className="text-xs">{item.label}</span>
           </Link>
         ))}
       </div>
