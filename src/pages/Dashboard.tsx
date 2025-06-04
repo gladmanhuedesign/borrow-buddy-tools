@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -210,17 +209,17 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex flex-col space-y-2">
-        <h1 className="text-4xl font-bold tracking-tight">Welcome back, {currentUser?.displayName}!</h1>
-        <p className="text-lg text-muted-foreground">
+        <h1 className="text-3xl font-bold">Welcome, {currentUser?.displayName}!</h1>
+        <p className="text-muted-foreground">
           Here's what's happening with your tools and groups
         </p>
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-6">
         {/* Three column layout for main sections */}
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-3">
           <ActiveBorrowingList />
           <ActiveLendingList />
           <PendingActions />
@@ -234,27 +233,27 @@ const Dashboard = () => {
 
         {/* Pending Invitations Section */}
         {invitations.length > 0 && (
-          <div className="space-y-6">
-            <div className="flex items-center space-x-3">
-              <UserPlus className="h-6 w-6 text-primary" />
-              <h2 className="text-2xl font-bold">Pending Group Invitations</h2>
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <UserPlus className="h-5 w-5" />
+              <h2 className="text-xl font-bold">Pending Group Invitations</h2>
             </div>
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2">
               {invitations.map((invitation) => (
-                <Card key={invitation.id} className="border-blue-200 bg-blue-50/50 hover:shadow-lg transition-all duration-200">
+                <Card key={invitation.id} className="border-blue-200 bg-blue-50/50">
                   <CardHeader>
-                    <CardTitle className="text-xl">{invitation.group_name}</CardTitle>
-                    <CardDescription className="text-base">
+                    <CardTitle className="text-lg">{invitation.group_name}</CardTitle>
+                    <CardDescription>
                       {invitation.group_description || "No description provided"}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground">
-                      Invited by <span className="font-semibold">{invitation.creator_display_name}</span> on{" "}
+                      Invited by <span className="font-medium">{invitation.creator_display_name}</span> on{" "}
                       {new Date(invitation.created_at).toLocaleDateString()}
                     </p>
                   </CardContent>
-                  <CardFooter className="flex justify-end space-x-3">
+                  <CardFooter className="flex justify-end space-x-2">
                     <Button
                       variant="outline"
                       size="sm"

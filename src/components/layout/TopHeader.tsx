@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -27,21 +26,21 @@ const TopHeader = () => {
   // Non-logged in header
   if (!isAuthenticated) {
     return (
-      <header className="sticky top-0 z-30 w-full saas-nav">
-        <div className="saas-container flex h-16 items-center justify-between">
+      <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur">
+        <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-2">
-            <Link to="/" className="flex items-center gap-2 font-bold text-foreground hover:text-primary transition-colors">
-              <Wrench className="h-6 w-6 text-primary" />
-              <span className="text-lg">Tool Share</span>
+            <Link to="/" className="flex items-center gap-2 font-bold">
+              <Wrench className="h-5 w-5" />
+              <span>Tool Share</span>
             </Link>
           </div>
           
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" asChild>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" asChild>
               <Link to="/login">Sign In</Link>
             </Button>
             <Button asChild>
-              <Link to="/register">Get Started</Link>
+              <Link to="/register">Sign Up</Link>
             </Button>
           </div>
         </div>
@@ -51,25 +50,25 @@ const TopHeader = () => {
 
   // Logged in header
   return (
-    <header className="sticky top-0 z-30 w-full saas-nav">
-      <div className="saas-container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-8">
-          <Link to="/dashboard" className="flex items-center gap-2 font-bold text-foreground hover:text-primary transition-colors">
-            <Wrench className="h-6 w-6 text-primary" />
-            <span className="text-lg">Tool Share</span>
+    <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur">
+      <div className="container flex h-14 items-center justify-between">
+        <div className="flex items-center gap-6">
+          <Link to="/dashboard" className="flex items-center gap-2 font-bold">
+            <Wrench className="h-5 w-5" />
+            <span>Tool Share</span>
           </Link>
           
-          <nav className="hidden lg:flex items-center gap-1">
-            <Button variant="ghost" size="sm" asChild>
+          <nav className="hidden md:flex items-center gap-4">
+            <Button variant="ghost" asChild>
               <Link to="/dashboard">Dashboard</Link>
             </Button>
-            <Button variant="ghost" size="sm" asChild>
+            <Button variant="ghost" asChild>
               <Link to="/tools">My Tools</Link>
             </Button>
-            <Button variant="ghost" size="sm" asChild>
+            <Button variant="ghost" asChild>
               <Link to="/groups">Groups</Link>
             </Button>
-            <Button variant="ghost" size="sm" asChild>
+            <Button variant="ghost" asChild>
               <Link to="/requests">Requests</Link>
             </Button>
           </nav>
@@ -79,12 +78,12 @@ const TopHeader = () => {
           <SearchInput />
         </div>
         
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-2">
           <NotificationDropdown />
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
+              <Button variant="outline" size="icon">
                 <User className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
