@@ -2,97 +2,129 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Wrench, Share2, Users } from "lucide-react";
+import { Wrench, Share2, Users, ArrowRight, CheckCircle } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
+  const features = [
+    "Share tools with trusted groups",
+    "Track borrowing history",
+    "Flexible date scheduling",
+    "Real-time notifications"
+  ];
+
   return (
-    <div className="flex flex-col min-h-screen">
-      <header className="w-full py-6 px-4 glass-nav">
-        <div className="container flex justify-between items-center">
-          <div className="flex items-center gap-2 animate-float">
-            <Wrench className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Tool Share</span>
-          </div>
-          <div className="space-x-2">
-            {!isAuthenticated ? (
-              <>
-                <Button variant="outline" onClick={() => navigate("/login")}>
-                  Sign In
+    <div className="flex flex-col min-h-screen bg-background">
+      <header className="w-full py-4 saas-nav">
+        <div className="saas-container">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <Wrench className="h-4 w-4" />
+              </div>
+              <span className="text-xl font-semibold">Tool Share</span>
+            </div>
+            <div className="flex items-center gap-3">
+              {!isAuthenticated ? (
+                <>
+                  <Button variant="ghost" onClick={() => navigate("/login")}>
+                    Sign In
+                  </Button>
+                  <Button onClick={() => navigate("/register")}>
+                    Get Started
+                  </Button>
+                </>
+              ) : (
+                <Button onClick={() => navigate("/dashboard")}>
+                  Dashboard
                 </Button>
-                <Button onClick={() => navigate("/register")}>
-                  Sign Up
-                </Button>
-              </>
-            ) : (
-              <Button onClick={() => navigate("/dashboard")}>
-                Dashboard
-              </Button>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </header>
 
       <main className="flex-1">
-        <section className="py-20 px-4">
-          <div className="container mx-auto max-w-4xl text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent animate-float">
-              Share Tools with Friends and Community
-            </h1>
-            <p className="text-xl mb-12 text-muted-foreground max-w-2xl mx-auto">
-              Borrow tools when you need them, share tools when you don't. Join our community-focused platform for sustainable resource sharing.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" onClick={() => navigate("/register")} className="px-8 animate-glow">
-                Get Started
-              </Button>
-              {isAuthenticated && (
-                <Button 
-                  size="lg" 
-                  variant="outline" 
-                  onClick={() => navigate("/dashboard")} 
-                  className="px-8"
-                >
-                  Go to Dashboard
+        {/* Hero Section */}
+        <section className="saas-section">
+          <div className="saas-container">
+            <div className="max-w-4xl mx-auto text-center">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
+                Share Tools with 
+                <span className="saas-gradient-text"> Your Community</span>
+              </h1>
+              <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
+                Borrow tools when you need them, share tools when you don't. Join our community-focused platform for sustainable resource sharing.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+                <Button size="lg" onClick={() => navigate("/register")} className="text-base px-8 py-6">
+                  Get Started Free
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
-              )}
+                {isAuthenticated && (
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    onClick={() => navigate("/dashboard")} 
+                    className="text-base px-8 py-6"
+                  >
+                    Go to Dashboard
+                  </Button>
+                )}
+              </div>
+              
+              {/* Feature list */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
+                {features.map((feature, index) => (
+                  <div key={index} className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span>{feature}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
 
-        <section className="py-16 px-4">
-          <div className="container mx-auto">
-            <h2 className="text-3xl font-bold mb-12 text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              How It Works
-            </h2>
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="text-center glass-card p-8 hover:scale-105 transition-all duration-300">
-                <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 animate-float">
-                  <Wrench className="w-8 h-8 text-primary" />
+        {/* Features Section */}
+        <section className="saas-section bg-muted/30">
+          <div className="saas-container">
+            <div className="max-w-3xl mx-auto text-center mb-16">
+              <h2 className="text-3xl font-bold mb-4">
+                How Tool Share Works
+              </h2>
+              <p className="text-lg text-muted-foreground">
+                Simple, secure, and social tool sharing in three easy steps
+              </p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              <div className="saas-feature-card text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary mx-auto mb-4">
+                  <Wrench className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">List Your Tools</h3>
-                <p className="text-muted-foreground">
-                  Add tools you're willing to share with your community or friends
+                <h3 className="text-xl font-semibold mb-3">List Your Tools</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Add tools you're willing to share with your community, set availability, and manage requests easily.
                 </p>
               </div>
-              <div className="text-center glass-card p-8 hover:scale-105 transition-all duration-300">
-                <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 animate-float" style={{ animationDelay: '1s' }}>
-                  <Users className="w-8 h-8 text-primary" />
+              <div className="saas-feature-card text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary mx-auto mb-4">
+                  <Users className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">Create Groups</h3>
-                <p className="text-muted-foreground">
-                  Form private groups with friends, neighbors, or colleagues
+                <h3 className="text-xl font-semibold mb-3">Join Groups</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Create or join private groups with friends, neighbors, or colleagues for trusted sharing.
                 </p>
               </div>
-              <div className="text-center glass-card p-8 hover:scale-105 transition-all duration-300">
-                <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 animate-float" style={{ animationDelay: '2s' }}>
-                  <Share2 className="w-8 h-8 text-primary" />
+              <div className="saas-feature-card text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary mx-auto mb-4">
+                  <Share2 className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">Borrow and Share</h3>
-                <p className="text-muted-foreground">
-                  Request tools when you need them and approve requests from others
+                <h3 className="text-xl font-semibold mb-3">Borrow & Lend</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Request tools when you need them and approve requests from trusted group members.
                 </p>
               </div>
             </div>
@@ -100,9 +132,11 @@ const Index = () => {
         </section>
       </main>
 
-      <footer className="w-full py-6 px-4 glass-nav mt-auto">
-        <div className="container mx-auto text-center text-muted-foreground">
-          <p>© 2025 Tool Share. All rights reserved.</p>
+      <footer className="w-full py-8 saas-nav">
+        <div className="saas-container">
+          <div className="text-center text-sm text-muted-foreground">
+            <p>© 2025 Tool Share. Built for community sharing.</p>
+          </div>
         </div>
       </footer>
     </div>
