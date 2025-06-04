@@ -10,6 +10,15 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { format } from "date-fns";
 
+const getAvatarColor = (name: string) => {
+  const colors = [
+    "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500", 
+    "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-orange-500"
+  ];
+  const index = name.charCodeAt(0) % colors.length;
+  return colors[index];
+};
+
 export const PendingActions = () => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
@@ -175,7 +184,7 @@ export const PendingActions = () => {
 
   if (totalPending === 0) {
     return (
-      <Card>
+      <Card className="hover:shadow-md transition-shadow duration-200">
         <CardHeader>
           <CardTitle>Pending Actions</CardTitle>
         </CardHeader>
@@ -190,18 +199,20 @@ export const PendingActions = () => {
     <div className="space-y-4">
       {/* Requests to Me */}
       {requestsToMe.length > 0 && (
-        <Card>
+        <Card className="hover:shadow-md transition-shadow duration-200">
           <CardHeader>
             <CardTitle>Requests to Me ({requestsToMe.length})</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {requestsToMe.map((request) => (
-              <div key={request.id} className="p-4 border rounded-lg">
+              <div key={request.id} className="p-4 border rounded-lg hover:bg-accent/50 transition-colors duration-200">
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
                     <Avatar className="h-12 w-12 flex-shrink-0">
                       <AvatarImage src={request.tools.image_url || ''} alt={request.tools.name} />
-                      <AvatarFallback>{request.tools.name.charAt(0).toUpperCase()}</AvatarFallback>
+                      <AvatarFallback className={`${getAvatarColor(request.tools.name)} text-white font-semibold`}>
+                        {request.tools.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
                     </Avatar>
                     
                     <div className="min-w-0 flex-1">
@@ -224,6 +235,7 @@ export const PendingActions = () => {
                       variant="outline"
                       onClick={() => handleDeny(request.id)}
                       disabled={processingId === request.id}
+                      className="hover:scale-105 hover:border-red-300 hover:text-red-700 transition-all duration-200"
                     >
                       Deny
                     </Button>
@@ -231,6 +243,7 @@ export const PendingActions = () => {
                       size="sm"
                       onClick={() => handleApprove(request.id)}
                       disabled={processingId === request.id}
+                      className="hover:scale-105 transition-transform duration-200"
                     >
                       Approve
                     </Button>
@@ -244,18 +257,20 @@ export const PendingActions = () => {
 
       {/* Requests from Me */}
       {requestsFromMe.length > 0 && (
-        <Card>
+        <Card className="hover:shadow-md transition-shadow duration-200">
           <CardHeader>
             <CardTitle>Requests I've Sent ({requestsFromMe.length})</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {requestsFromMe.map((request) => (
-              <div key={request.id} className="p-4 border rounded-lg">
+              <div key={request.id} className="p-4 border rounded-lg hover:bg-accent/50 transition-colors duration-200">
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
                     <Avatar className="h-12 w-12 flex-shrink-0">
                       <AvatarImage src={request.tools.image_url || ''} alt={request.tools.name} />
-                      <AvatarFallback>{request.tools.name.charAt(0).toUpperCase()}</AvatarFallback>
+                      <AvatarFallback className={`${getAvatarColor(request.tools.name)} text-white font-semibold`}>
+                        {request.tools.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
                     </Avatar>
                     
                     <div className="min-w-0 flex-1">
@@ -266,7 +281,7 @@ export const PendingActions = () => {
                       <p className="text-sm text-muted-foreground">
                         {format(new Date(request.start_date), 'MMM d')} - {format(new Date(request.end_date), 'MMM d, yyyy')}
                       </p>
-                      <Badge variant="outline">Pending</Badge>
+                      <Badge className="bg-orange-100 text-orange-800 border-orange-200">Pending</Badge>
                     </div>
                   </div>
                   
@@ -276,6 +291,7 @@ export const PendingActions = () => {
                       variant="outline"
                       onClick={() => handleCancel(request.id)}
                       disabled={processingId === request.id}
+                      className="hover:scale-105 hover:border-red-300 hover:text-red-700 transition-all duration-200"
                     >
                       Cancel
                     </Button>

@@ -10,6 +10,25 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { format, isPast } from "date-fns";
 
+const getStatusColor = (status: string, isOverdue: boolean) => {
+  if (isOverdue) return "bg-red-100 text-red-800 border-red-200";
+  switch (status) {
+    case "approved": return "bg-yellow-100 text-yellow-800 border-yellow-200";
+    case "picked_up": return "bg-green-100 text-green-800 border-green-200";
+    case "return_pending": return "bg-blue-100 text-blue-800 border-blue-200";
+    default: return "bg-gray-100 text-gray-800 border-gray-200";
+  }
+};
+
+const getAvatarColor = (name: string) => {
+  const colors = [
+    "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500", 
+    "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-orange-500"
+  ];
+  const index = name.charCodeAt(0) % colors.length;
+  return colors[index];
+};
+
 export const ActiveBorrowingList = () => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
@@ -108,7 +127,7 @@ export const ActiveBorrowingList = () => {
 
   if (borrowedTools.length === 0) {
     return (
-      <Card>
+      <Card className="hover:shadow-md transition-shadow duration-200">
         <CardHeader>
           <CardTitle>Active Borrowing</CardTitle>
         </CardHeader>
@@ -120,7 +139,7 @@ export const ActiveBorrowingList = () => {
   }
 
   return (
-    <Card>
+    <Card className="hover:shadow-md transition-shadow duration-200">
       <CardHeader>
         <CardTitle>Active Borrowing ({borrowedTools.length})</CardTitle>
       </CardHeader>
@@ -130,19 +149,23 @@ export const ActiveBorrowingList = () => {
           const tool = request.tools;
           
           return (
-            <div key={request.id} className="p-4 border rounded-lg">
+            <div key={request.id} className="p-4 border rounded-lg hover:bg-accent/50 transition-colors duration-200">
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
                   <Avatar className="h-12 w-12 flex-shrink-0">
                     <AvatarImage src={tool.image_url || ''} alt={tool.name} />
-                    <AvatarFallback>{tool.name.charAt(0).toUpperCase()}</AvatarFallback>
+                    <AvatarFallback className={`${getAvatarColor(tool.name)} text-white font-semibold`}>
+                      {tool.name.charAt(0).toUpperCase()}
+                    </AvatarFallback>
                   </Avatar>
                   
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="font-medium truncate">{tool.name}</h4>
                       {isOverdue && <Badge variant="destructive">Overdue</Badge>}
-                      <Badge variant="outline">{request.status}</Badge>
+                      <Badge className={getStatusColor(request.status, false)}>
+                        {request.status.replace('_', ' ')}
+                      </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground mb-1">
                       From: {tool.profiles?.display_name}
@@ -159,6 +182,7 @@ export const ActiveBorrowingList = () => {
                       size="sm"
                       onClick={() => handleConfirmPickup(request.id)}
                       disabled={processingId === request.id}
+                      className="hover:scale-105 transition-transform duration-200"
                     >
                       Confirm Pickup
                     </Button>
@@ -169,6 +193,7 @@ export const ActiveBorrowingList = () => {
                       size="sm"
                       onClick={() => handleInitiateReturn(request.id)}
                       disabled={processingId === request.id}
+                      className="hover:scale-105 transition-transform duration-200"
                     >
                       Initiate Return
                     </Button>

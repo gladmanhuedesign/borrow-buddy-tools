@@ -1,5 +1,4 @@
 
-
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ export const QuickActions = () => {
   const navigate = useNavigate();
 
   return (
-    <Card>
+    <Card className="hover:shadow-md transition-shadow duration-200">
       <CardHeader>
         <CardTitle>Quick Actions</CardTitle>
       </CardHeader>
@@ -17,7 +16,7 @@ export const QuickActions = () => {
         <Button 
           variant="action"
           onClick={() => navigate("/tools/add")}
-          className="w-full h-auto py-4 text-left flex items-center justify-start space-x-4"
+          className="w-full h-auto py-4 text-left flex items-center justify-start space-x-4 hover:scale-105 transition-transform duration-200"
         >
           <PlusCircle className="h-5 w-5" /> 
           <div>
