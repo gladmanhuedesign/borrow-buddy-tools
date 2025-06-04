@@ -84,24 +84,24 @@ const MobileNavigation = () => {
   ];
   
   return (
-    <nav className="fixed bottom-0 left-0 z-40 w-full border-t bg-background md:hidden">
-      <div className="grid grid-cols-4">
+    <nav className="fixed bottom-0 left-0 z-40 w-full border-t border-border bg-background/95 backdrop-blur md:hidden">
+      <div className="grid grid-cols-4 px-2">
         {navItems.map((item) => (
           <Link
             key={item.href}
             to={item.href}
             className={cn(
-              "flex flex-col items-center justify-center py-2",
+              "flex flex-col items-center justify-center py-3 px-2 rounded-lg mx-1 my-2 transition-all duration-200",
               location.pathname === item.href
-                ? "text-primary"
-                : "text-muted-foreground hover:text-foreground"
+                ? "text-primary bg-primary/10"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent"
             )}
           >
             <span className="relative">
               {item.icon}
               {item.notification}
             </span>
-            <span className="text-xs">{item.label}</span>
+            <span className="text-xs mt-1 font-medium">{item.label}</span>
           </Link>
         ))}
       </div>
