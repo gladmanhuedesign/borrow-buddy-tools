@@ -41,15 +41,11 @@ const formSchema = z.object({
   name: z.string().min(2, {
     message: "Tool name must be at least 2 characters.",
   }),
-  description: z.string().min(10, {
-    message: "Description must be at least 10 characters.",
-  }),
+  description: z.string().optional(),
   categoryId: z.string({
     required_error: "Please select a category.",
   }),
-  condition: z.nativeEnum(ToolCondition, {
-    required_error: "Please select the condition of your tool.",
-  }),
+  condition: z.nativeEnum(ToolCondition).optional(),
   instructions: z.string().optional(),
   image: z
     .instanceof(File)
@@ -865,7 +861,7 @@ const AddTool = () => {
             name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Description</FormLabel>
+                <FormLabel>Description (Optional)</FormLabel>
                 <FormControl>
                   <Textarea
                     placeholder="Describe your tool, including make, model, and details"
@@ -878,100 +874,114 @@ const AddTool = () => {
             )}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              control={form.control}
-              name="categoryId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      className="grid grid-cols-1 gap-2"
-                      disabled={loadingCategories}
-                    >
-                      {loadingCategories ? (
-                        <div className="text-center text-muted-foreground">
-                          Loading categories...
+          <FormField
+            control={form.control}
+            name="categoryId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Category</FormLabel>
+                <FormControl>
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    className="grid grid-cols-1 gap-2"
+                    disabled={loadingCategories}
+                  >
+                    {loadingCategories ? (
+                      <div className="text-center text-muted-foreground">
+                        Loading categories...
+                      </div>
+                    ) : (
+                      categories.map((category) => (
+                        <div key={category.id} className="flex items-center space-x-2">
+                          <RadioGroupItem
+                            value={category.id}
+                            id={category.id}
+                            className="peer sr-only"
+                          />
+                          <label
+                            htmlFor={category.id}
+                            className="flex-1 cursor-pointer rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground"
+                          >
+                            {category.name}
+                          </label>
                         </div>
-                      ) : (
-                        categories.map((category) => (
-                          <div key={category.id} className="flex items-center space-x-2">
-                            <RadioGroupItem
-                              value={category.id}
-                              id={category.id}
-                              className="peer sr-only"
-                            />
-                            <label
-                              htmlFor={category.id}
-                              className="flex-1 cursor-pointer rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground"
-                            >
-                              {category.name}
-                            </label>
-                          </div>
-                        ))
-                      )}
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="space-y-6">
-              <FormField
-                control={form.control}
-                name="condition"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Condition</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select condition" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Object.entries(toolConditionLabels).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      ))
+                    )}
+                  </RadioGroup>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="condition"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Condition (Optional)</FormLabel>
+                <FormControl>
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    className="grid grid-cols-2 md:grid-cols-3 gap-2"
+                  >
+                    {Object.entries(toolConditionLabels).map(([value, label]) => (
+                      <div key={value} className="flex items-center space-x-2">
+                        <RadioGroupItem
+                          value={value}
+                          id={`condition-${value}`}
+                          className="peer sr-only"
+                        />
+                        <label
+                          htmlFor={`condition-${value}`}
+                          className="flex-1 cursor-pointer rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground text-center"
+                        >
+                          {label}
+                        </label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-              <FormField
-                control={form.control}
-                name="powerSource"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Power Source (Optional)</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select power source" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Object.entries(toolPowerSourceLabels).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
+          <FormField
+            control={form.control}
+            name="powerSource"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Power Source (Optional)</FormLabel>
+                <FormControl>
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    className="grid grid-cols-2 md:grid-cols-3 gap-2"
+                  >
+                    {Object.entries(toolPowerSourceLabels).map(([value, label]) => (
+                      <div key={value} className="flex items-center space-x-2">
+                        <RadioGroupItem
+                          value={value}
+                          id={`power-${value}`}
+                          className="peer sr-only"
+                        />
+                        <label
+                          htmlFor={`power-${value}`}
+                          className="flex-1 cursor-pointer rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground text-center"
+                        >
+                          {label}
+                        </label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           
           {/* Advanced Group Visibility Settings */}
           {groups.length > 0 && (
