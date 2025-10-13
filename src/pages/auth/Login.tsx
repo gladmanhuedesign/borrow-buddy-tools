@@ -61,10 +61,6 @@ const Login = () => {
     try {
       setIsLoading(true);
       await login(values.email, values.password);
-      toast({
-        title: "Login successful",
-        description: "Welcome back!"
-      });
       // Redirection now happens in the useEffect above
     } catch (error: any) {
       console.error("Login error:", error);
