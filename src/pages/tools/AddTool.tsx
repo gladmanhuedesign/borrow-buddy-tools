@@ -277,7 +277,7 @@ const AddTool = () => {
         .from('tools')
         .insert({
           name: data.name,
-          description: data.description,
+          description: data.description || null,
           category_id: data.categoryId,
           owner_id: currentUser.id,
           image_url: imageUrl,
@@ -364,7 +364,7 @@ const AddTool = () => {
             .from('tools')
             .insert({
               name: draft.formData.name,
-              description: draft.formData.description,
+              description: draft.formData.description || null,
               category_id: draft.formData.categoryId,
               owner_id: currentUser.id,
               image_url: imageUrl,
@@ -560,6 +560,15 @@ const AddTool = () => {
             cat => cat.name.toLowerCase() === suggestion.category.toLowerCase()
           );
           
+          // Convert AI power source to enum value
+          let powerSourceValue: ToolPowerSource | undefined = undefined;
+          if (suggestion.power_source) {
+            const powerSourceUpper = suggestion.power_source.toUpperCase();
+            if (powerSourceUpper in ToolPowerSource) {
+              powerSourceValue = ToolPowerSource[powerSourceUpper as keyof typeof ToolPowerSource];
+            }
+          }
+          
           draft.aiSuggestion = suggestion;
           draft.formData = {
             name: suggestion.tool_name,
@@ -567,8 +576,7 @@ const AddTool = () => {
             categoryId: matchingCategory?.id || '',
             condition: suggestion.condition as ToolCondition,
             brand: suggestion.brand || '',
-            powerSource: suggestion.power_source ? 
-              (suggestion.power_source.toUpperCase() as keyof typeof ToolPowerSource) : undefined,
+            powerSource: powerSourceValue,
           };
           draft.status = 'analyzed';
         } else {
@@ -681,11 +689,11 @@ const AddTool = () => {
 
   const populateFormFromDraft = (draft: ToolDraft) => {
     form.setValue('name', draft.formData.name);
-    form.setValue('description', draft.formData.description);
+    form.setValue('description', draft.formData.description || '');
     form.setValue('categoryId', draft.formData.categoryId);
-    form.setValue('condition', draft.formData.condition as ToolCondition);
+    form.setValue('condition', (draft.formData.condition || undefined) as ToolCondition | undefined);
     form.setValue('brand', draft.formData.brand || '');
-    form.setValue('powerSource', draft.formData.powerSource as ToolPowerSource | undefined);
+    form.setValue('powerSource', (draft.formData.powerSource || undefined) as ToolPowerSource | undefined);
     form.setValue('instructions', draft.formData.instructions || '');
     form.setValue('hiddenFromGroups', draft.formData.hiddenFromGroups || []);
   };
