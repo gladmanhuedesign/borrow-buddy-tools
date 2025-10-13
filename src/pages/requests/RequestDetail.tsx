@@ -550,9 +550,15 @@ const RequestDetail = () => {
                   <Textarea
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
                     placeholder="Type your message here..."
-                    className="flex-1"
-                    rows={2}
+                    className="flex-1 min-h-[40px] max-h-[200px] resize-none"
+                    rows={1}
                   />
                   <Button 
                     onClick={handleSendMessage}
