@@ -14,6 +14,8 @@ type SearchResult = {
   image_url: string | null;
   owner_id: string;
   group_id: string;
+  brand: string | null;
+  power_source: string | null;
 };
 
 export const useToolSearch = (searchTerm: string, enabled: boolean = true) => {
@@ -63,6 +65,8 @@ export const useToolSearch = (searchTerm: string, enabled: boolean = true) => {
           owner_id, 
           status, 
           image_url,
+          brand,
+          power_source,
           tool_categories(name)
         `)
         .in('owner_id', memberIds)
@@ -98,6 +102,8 @@ export const useToolSearch = (searchTerm: string, enabled: boolean = true) => {
             owner_id, 
             status, 
             image_url,
+            brand,
+            power_source,
             tool_categories(name)
           `)
           .in('owner_id', memberIds)
@@ -170,7 +176,9 @@ export const useToolSearch = (searchTerm: string, enabled: boolean = true) => {
         status: tool.status,
         image_url: tool.image_url,
         owner_id: tool.owner_id,
-        group_id: userGroupMap.get(tool.owner_id) || ''
+        group_id: userGroupMap.get(tool.owner_id) || '',
+        brand: tool.brand || null,
+        power_source: tool.power_source || null
       }));
     },
     enabled: enabled && !!currentUser?.id && !!searchTerm.trim()

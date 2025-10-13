@@ -2,10 +2,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Plus, Sparkles } from "lucide-react";
+import { Plus, Sparkles, Zap } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { toolStatusLabels } from "@/config/toolCategories";
+import { toolStatusLabels, toolPowerSourceLabels } from "@/config/toolCategories";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/components/ui/use-toast";
@@ -18,6 +18,8 @@ interface Tool {
   status: string;
   image_url: string | null;
   created_at: string;
+  brand: string | null;
+  power_source: string | null;
 }
 
 const Tools = () => {
@@ -160,6 +162,17 @@ const Tools = () => {
                   <CardDescription className="line-clamp-2">
                     {tool.description || "No description provided"}
                   </CardDescription>
+                  {(tool.brand || tool.power_source) && (
+                    <div className="flex gap-2 mt-2 text-xs text-muted-foreground">
+                      {tool.brand && <span className="font-medium">{tool.brand}</span>}
+                      {tool.power_source && (
+                        <span className="flex items-center gap-1">
+                          <Zap className="h-3 w-3" />
+                          {toolPowerSourceLabels[tool.power_source as keyof typeof toolPowerSourceLabels]}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </CardHeader>
                 <CardFooter>
                   <Button variant="outline" size="sm" className="w-full">

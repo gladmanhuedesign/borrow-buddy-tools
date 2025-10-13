@@ -9,6 +9,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { format, isPast } from "date-fns";
+import { toolPowerSourceLabels } from "@/config/toolCategories";
+import { Zap } from "lucide-react";
 
 const getStatusColor = (status: string, isOverdue: boolean) => {
   if (isOverdue) return "bg-red-100 text-red-800 border-red-200";
@@ -52,6 +54,8 @@ export const ActiveBorrowingList = () => {
             name,
             description,
             image_url,
+            brand,
+            power_source,
             profiles (
               display_name
             )
@@ -167,6 +171,17 @@ export const ActiveBorrowingList = () => {
                         {request.status.replace('_', ' ')}
                       </Badge>
                     </div>
+                    {(tool.brand || tool.power_source) && (
+                      <div className="flex gap-2 mb-1 text-xs text-muted-foreground">
+                        {tool.brand && <span className="font-medium">{tool.brand}</span>}
+                        {tool.power_source && (
+                          <span className="flex items-center gap-1">
+                            <Zap className="h-3 w-3" />
+                            {toolPowerSourceLabels[tool.power_source as keyof typeof toolPowerSourceLabels]}
+                          </span>
+                        )}
+                      </div>
+                    )}
                     <p className="text-sm text-muted-foreground mb-1">
                       From: {tool.profiles?.display_name}
                     </p>

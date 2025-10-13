@@ -2,7 +2,7 @@
 import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import { Search, Filter, Hammer } from "lucide-react";
+import { Search, Filter, Hammer, Zap } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToolSearch } from "@/hooks/useToolSearch";
 import { useFilterOptions } from "@/hooks/useFilterOptions";
+import { toolPowerSourceLabels } from "@/config/toolCategories";
 import { cn } from "@/lib/utils";
 
 const SearchResults = () => {
@@ -232,6 +233,17 @@ const SearchResults = () => {
                         <p className="text-xs text-muted-foreground truncate">
                           {tool.description}
                         </p>
+                        {(tool.brand || tool.power_source) && (
+                          <div className="flex gap-2 mt-1 text-xs text-muted-foreground">
+                            {tool.brand && <span className="font-medium">{tool.brand}</span>}
+                            {tool.power_source && (
+                              <span className="flex items-center gap-1">
+                                <Zap className="h-3 w-3" />
+                                {toolPowerSourceLabels[tool.power_source as keyof typeof toolPowerSourceLabels]}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center justify-between text-xs">
                         <div className="space-y-1">

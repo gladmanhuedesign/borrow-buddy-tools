@@ -5,8 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Hammer, Clock } from "lucide-react";
+import { Hammer, Clock, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toolPowerSourceLabels } from "@/config/toolCategories";
 
 type NewTool = {
   id: string;
@@ -17,6 +18,8 @@ type NewTool = {
   owner_name: string;
   group_name: string;
   owner_id: string;
+  brand: string | null;
+  power_source: string | null;
 };
 
 export const NewToolsFeed = () => {
@@ -52,7 +55,7 @@ export const NewToolsFeed = () => {
       // Get tools from group members (excluding current user's tools)
       const { data: toolsData, error: toolsError } = await supabase
         .from('tools')
-        .select('id, name, description, image_url, created_at, owner_id')
+        .select('id, name, description, image_url, created_at, owner_id, brand, power_source')
         .in('owner_id', memberIds)
         .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
         .order('created_at', { ascending: false })
@@ -104,7 +107,9 @@ export const NewToolsFeed = () => {
         created_at: tool.created_at,
         owner_name: ownersMap.get(tool.owner_id) || 'Unknown User',
         group_name: groupsMap.get(userGroupMap.get(tool.owner_id) || '') || 'Unknown Group',
-        owner_id: tool.owner_id
+        owner_id: tool.owner_id,
+        brand: tool.brand,
+        power_source: tool.power_source
       })) as NewTool[];
     },
     enabled: !!currentUser?.id
@@ -175,6 +180,17 @@ export const NewToolsFeed = () => {
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <h4 className="font-medium text-sm truncate">{tool.name}</h4>
+                  {(tool.brand || tool.power_source) && (
+                    <div className="flex gap-2 text-xs text-muted-foreground">
+                      {tool.brand && <span className="font-medium">{tool.brand}</span>}
+                      {tool.power_source && (
+                        <span className="flex items-center gap-1">
+                          <Zap className="h-3 w-3" />
+                          {toolPowerSourceLabels[tool.power_source as keyof typeof toolPowerSourceLabels]}
+                        </span>
+                      )}
+                    </div>
+                  )}
                   <p className="text-sm text-muted-foreground">
                     Added by {tool.owner_name} in {tool.group_name}
                   </p>
