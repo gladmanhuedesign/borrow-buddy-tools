@@ -12,6 +12,7 @@ import { format, isPast } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { toolPowerSourceLabels } from "@/config/toolCategories";
 import { Zap, MessageCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const getStatusColor = (status: string, isOverdue: boolean) => {
   if (isOverdue) return "bg-red-100 text-red-800 border-red-200";
@@ -186,8 +187,11 @@ export const ActiveLendingList = () => {
                       )}
                       {request.total_message_count > 0 && (
                         <Badge 
-                          variant={request.unread_count > 0 ? "default" : "secondary"} 
-                          className="ml-auto flex items-center gap-1"
+                          variant={request.unread_count > 0 ? "default" : "outline"} 
+                          className={cn(
+                            "ml-auto flex items-center gap-1",
+                            request.unread_count === 0 && "bg-muted text-muted-foreground border-muted"
+                          )}
                         >
                           <MessageCircle className="h-3 w-3" />
                           {request.unread_count > 0 ? request.unread_count : request.total_message_count}
