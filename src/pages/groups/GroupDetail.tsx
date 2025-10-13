@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/dialog";
 import { ArrowLeft, Share2, Users, Plus, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 
 const inviteFormSchema = z.object({
   email: z.string().email({
@@ -182,8 +183,12 @@ const GroupDetail = () => {
           description,
           status,
           image_url,
+          brand,
+          power_source,
+          category_id,
           owner_id,
-          profiles:owner_id(display_name)
+          profiles:owner_id(display_name),
+          tool_categories:category_id(name)
         `)
         .in('owner_id', memberIds.map(m => m.user_id));
         
@@ -463,31 +468,43 @@ const GroupDetail = () => {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {tools.map((tool: any) => (
-                <Card key={tool.id} className="h-full">
-                  <CardHeader>
-                    <CardTitle className="line-clamp-1">{tool.name}</CardTitle>
-                    <CardDescription className="line-clamp-2">
-                      {tool.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      Owner: {tool.profiles?.display_name}
-                    </p>
-                    <p className="text-sm font-medium mt-1">
-                      Status: <span className="capitalize">{tool.status}</span>
-                    </p>
+                <Card key={tool.id} className="h-full cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/tools/${tool.id}`)}>
+                  <CardContent className="p-4">
+                    <div className="flex gap-4">
+                      <div className="flex-shrink-0">
+                        {tool.image_url ? (
+                          <img 
+                            src={tool.image_url} 
+                            alt={tool.name}
+                            className="w-20 h-20 object-cover rounded-md"
+                          />
+                        ) : (
+                          <div className="w-20 h-20 bg-muted rounded-md flex items-center justify-center text-muted-foreground text-xs">
+                            No image
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold line-clamp-1 mb-2">{tool.name}</h3>
+                        <div className="space-y-1 text-sm text-muted-foreground">
+                          {tool.brand && (
+                            <p className="line-clamp-1">Brand: {tool.brand}</p>
+                          )}
+                          {tool.power_source && (
+                            <p className="line-clamp-1">Power: {tool.power_source}</p>
+                          )}
+                          {tool.tool_categories?.name && (
+                            <p className="line-clamp-1">Category: {tool.tool_categories.name}</p>
+                          )}
+                        </div>
+                        <div className="mt-2 flex items-center gap-2">
+                          <Badge variant={tool.status === 'available' ? 'default' : 'secondary'} className="text-xs">
+                            {tool.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
                   </CardContent>
-                  <CardFooter>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full"
-                      onClick={() => navigate(`/tools/${tool.id}`)}
-                    >
-                      View Tool
-                    </Button>
-                  </CardFooter>
                 </Card>
               ))}
             </div>
