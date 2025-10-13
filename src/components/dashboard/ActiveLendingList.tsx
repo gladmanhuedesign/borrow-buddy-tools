@@ -155,10 +155,13 @@ export const ActiveLendingList = () => {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="font-medium truncate">{tool.name}</h4>
-                      {isOverdue && <Badge variant="destructive">Overdue</Badge>}
-                      <Badge className={getStatusColor(request.status, false)}>
-                        {request.status.replace('_', ' ')}
-                      </Badge>
+                      {isOverdue ? (
+                        <Badge variant="destructive">Overdue</Badge>
+                      ) : (
+                        <Badge className={getStatusColor(request.status, false)}>
+                          {request.status.replace('_', ' ')}
+                        </Badge>
+                      )}
                     </div>
                     {(tool.brand || tool.power_source) && (
                       <div className="flex gap-2 mb-1 text-xs text-muted-foreground">
