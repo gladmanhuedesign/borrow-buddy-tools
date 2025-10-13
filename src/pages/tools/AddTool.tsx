@@ -30,8 +30,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ToolReviewCarousel } from "@/components/tools/ToolReviewCarousel";
 import { ToolDraft } from "@/types/toolDraft";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -247,9 +247,97 @@ const AddTool = () => {
   const onSubmit = async (data: FormValues) => {
     if (!currentUser) return;
     
-    // Handle batch mode submission
+    // Handle batch mode - save current tool and move to next
     if (isBatchMode && toolDrafts.length > 0) {
-      await handleBatchSubmit();
+      try {
+        setIsLoading(true);
+        const currentDraft = toolDrafts[currentDraftIndex];
+        
+        // Upload image for current tool
+        let imageUrl: string | null = null;
+        if (currentDraft.file) {
+          imageUrl = await uploadImage(currentDraft.file);
+          if (!imageUrl) {
+            toast({
+              title: "Image upload failed",
+              description: "Failed to upload the image. Please try again.",
+              variant: "destructive",
+            });
+            setIsLoading(false);
+            return;
+          }
+        }
+        
+        // Insert current tool into database
+        const { data: toolData, error } = await supabase
+          .from('tools')
+          .insert({
+            name: data.name,
+            description: data.description || null,
+            category_id: data.categoryId,
+            owner_id: currentUser.id,
+            image_url: imageUrl,
+            status: 'available',
+            brand: data.brand || null,
+            power_source: data.powerSource || null,
+          })
+          .select('id')
+          .single();
+        
+        if (error) {
+          console.error("Error creating tool:", error);
+          toast({
+            title: "Failed to save tool",
+            description: "Please fix errors and try again.",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+        
+        // Handle group visibility
+        if (groups.length > 0 && data.hiddenFromGroups && data.hiddenFromGroups.length > 0) {
+          const visibilityInserts = data.hiddenFromGroups.map(groupId => ({
+            tool_id: toolData.id,
+            group_id: groupId,
+            is_hidden: true
+          }));
+          
+          await supabase.from('tool_group_visibility').insert(visibilityInserts);
+        }
+        
+        // Remove current tool from drafts
+        const updatedDrafts = toolDrafts.filter((_, idx) => idx !== currentDraftIndex);
+        
+        if (updatedDrafts.length === 0) {
+          // All done!
+          toast({
+            title: "All tools saved!",
+            description: "All tools have been added to your inventory.",
+          });
+          setIsBatchMode(false);
+          setToolDrafts([]);
+          setCurrentDraftIndex(0);
+          navigate('/tools');
+        } else {
+          // Move to next tool
+          setToolDrafts(updatedDrafts);
+          populateFormFromDraft(updatedDrafts[0]);
+          toast({
+            title: "Tool saved!",
+            description: `Review the next tool (${updatedDrafts.length} remaining).`,
+          });
+        }
+      } catch (error) {
+        console.error("Tool creation failed:", error);
+        toast({
+          title: "Failed to save tool",
+          description: "An error occurred. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
       return;
     }
     
@@ -293,7 +381,7 @@ const AddTool = () => {
         throw error;
       }
 
-      // Handle group visibility settings if user has groups and has hidden the tool from some
+      // Handle group visibility settings
       if (groups.length > 0 && data.hiddenFromGroups && data.hiddenFromGroups.length > 0) {
         const visibilityInserts = data.hiddenFromGroups.map(groupId => ({
           tool_id: toolData.id,
@@ -307,7 +395,6 @@ const AddTool = () => {
 
         if (visibilityError) {
           console.error("Error setting group visibility:", visibilityError);
-          // Don't fail the entire operation for visibility settings
           toast({
             title: "Tool created with warning",
             description: "Tool was created but group visibility settings may not have been saved correctly.",
@@ -321,7 +408,6 @@ const AddTool = () => {
         description: `"${data.name}" has been added to your tools.`,
       });
       
-      // Navigate to the tools list
       navigate("/tools");
     } catch (error) {
       console.error("Tool creation failed:", error);
@@ -335,83 +421,6 @@ const AddTool = () => {
     }
   };
 
-  // Handle batch tool creation
-  const handleBatchSubmit = async () => {
-    if (!currentUser) return;
-    
-    try {
-      setIsLoading(true);
-      
-      // Save current form data to current draft
-      const currentDraft = toolDrafts[currentDraftIndex];
-      currentDraft.formData = form.getValues() as any;
-      
-      let successCount = 0;
-      let failCount = 0;
-      
-      for (let i = 0; i < toolDrafts.length; i++) {
-        const draft = toolDrafts[i];
-        
-        try {
-          // Upload image
-          let imageUrl: string | null = null;
-          if (draft.file) {
-            imageUrl = await uploadImage(draft.file);
-          }
-          
-          // Insert tool
-          const { data: toolData, error } = await supabase
-            .from('tools')
-            .insert({
-              name: draft.formData.name,
-              description: draft.formData.description || null,
-              category_id: draft.formData.categoryId,
-              owner_id: currentUser.id,
-              image_url: imageUrl,
-              status: 'available',
-              brand: draft.formData.brand || null,
-              power_source: draft.formData.powerSource || null,
-            })
-            .select('id')
-            .single();
-          
-          if (error) throw error;
-          
-          // Handle group visibility
-          if (groups.length > 0 && draft.formData.hiddenFromGroups && draft.formData.hiddenFromGroups.length > 0) {
-            const visibilityInserts = draft.formData.hiddenFromGroups.map(groupId => ({
-              tool_id: toolData.id,
-              group_id: groupId,
-              is_hidden: true
-            }));
-            
-            await supabase.from('tool_group_visibility').insert(visibilityInserts);
-          }
-          
-          successCount++;
-        } catch (error) {
-          console.error(`Failed to create tool ${i + 1}:`, error);
-          failCount++;
-        }
-      }
-      
-      toast({
-        title: "Batch creation complete!",
-        description: `${successCount} tools added successfully${failCount > 0 ? `, ${failCount} failed` : ''}.`,
-      });
-      
-      navigate("/tools");
-    } catch (error) {
-      console.error("Batch creation error:", error);
-      toast({
-        title: "Batch creation failed",
-        description: "An error occurred while creating tools.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // Handle AI-powered tool scanning
   const handleAIScan = async (file: File) => {
@@ -640,50 +649,22 @@ const AddTool = () => {
     setAiSuggestion(null);
   };
 
-  // Batch mode handlers
-  const handleNextDraft = () => {
-    if (currentDraftIndex < toolDrafts.length - 1) {
-      // Save current form data to current draft
-      const currentDraft = toolDrafts[currentDraftIndex];
-      currentDraft.formData = form.getValues() as any;
-      currentDraft.status = 'edited';
-      
-      setCurrentDraftIndex(currentDraftIndex + 1);
-      
-      // Load next draft into form
-      const nextDraft = toolDrafts[currentDraftIndex + 1];
-      if (nextDraft) {
-        populateFormFromDraft(nextDraft);
-      }
-    }
-  };
-
-  const handlePreviousDraft = () => {
-    if (currentDraftIndex > 0) {
-      // Save current form data
-      const currentDraft = toolDrafts[currentDraftIndex];
-      currentDraft.formData = form.getValues() as any;
-      
-      setCurrentDraftIndex(currentDraftIndex - 1);
-      
-      // Load previous draft into form
-      const prevDraft = toolDrafts[currentDraftIndex - 1];
-      if (prevDraft) {
-        populateFormFromDraft(prevDraft);
-      }
-    }
-  };
-
-  const handleRemoveDraft = (index: number) => {
-    const newDrafts = toolDrafts.filter((_, i) => i !== index);
-    setToolDrafts(newDrafts);
+  // Skip current tool in batch mode
+  const skipCurrentTool = () => {
+    const updatedDrafts = toolDrafts.filter((_, idx) => idx !== currentDraftIndex);
+    setToolDrafts(updatedDrafts);
     
-    if (newDrafts.length === 0) {
+    if (updatedDrafts.length === 0) {
       setIsBatchMode(false);
       setCurrentDraftIndex(0);
-    } else if (currentDraftIndex >= newDrafts.length) {
-      setCurrentDraftIndex(newDrafts.length - 1);
-      populateFormFromDraft(newDrafts[newDrafts.length - 1]);
+      toast({
+        title: "Batch mode cancelled",
+      });
+    } else {
+      populateFormFromDraft(updatedDrafts[0]);
+      toast({
+        title: "Tool skipped",
+      });
     }
   };
 
@@ -813,16 +794,34 @@ const AddTool = () => {
             </div>
           </Card>
 
-          {/* Review Carousel for Batch Mode */}
+          {/* Progress Banner for Batch Mode */}
           {isBatchMode && toolDrafts.length > 0 && (
-            <ToolReviewCarousel
-              drafts={toolDrafts}
-              currentIndex={currentDraftIndex}
-              onNext={handleNextDraft}
-              onPrevious={handlePreviousDraft}
-              onRemove={handleRemoveDraft}
-              totalDrafts={toolDrafts.length}
-            />
+            <Card className="p-4 bg-primary/5 border-primary/20">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-semibold">
+                    Reviewing Tool {currentDraftIndex + 1} of {toolDrafts.length}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {toolDrafts[currentDraftIndex].aiSuggestion?.tool_name || 'Unnamed Tool'}
+                  </p>
+                </div>
+                <Badge variant="outline">
+                  {toolDrafts.length} remaining
+                </Badge>
+              </div>
+              
+              {/* Image Preview */}
+              {toolDrafts[currentDraftIndex]?.imagePreview && (
+                <div className="relative aspect-video overflow-hidden rounded-lg border bg-muted">
+                  <img
+                    src={toolDrafts[currentDraftIndex].imagePreview}
+                    alt="Current tool preview"
+                    className="h-full w-full object-contain"
+                  />
+                </div>
+              )}
+            </Card>
           )}
 
           <div className="relative">
@@ -1129,7 +1128,8 @@ const AddTool = () => {
             )}
           />
           
-          {isBatchMode && toolDrafts.length > 0 && (
+          {/* Button Section */}
+          {isBatchMode && toolDrafts.length > 0 ? (
             <div className="flex gap-3">
               <Button
                 type="button"
@@ -1139,10 +1139,47 @@ const AddTool = () => {
                   setToolDrafts([]);
                   setCurrentDraftIndex(0);
                   form.reset();
+                  toast({
+                    title: "Batch mode cancelled",
+                    description: "Previously saved tools are still in your inventory.",
+                  });
                 }}
                 className="flex-1"
               >
-                Cancel Batch
+                Cancel Remaining ({toolDrafts.length} left)
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={skipCurrentTool}
+              >
+                Skip This Tool
+              </Button>
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="flex-1"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+                  </>
+                ) : toolDrafts.length === 1 ? (
+                  "Save & Finish"
+                ) : (
+                  `Save & Next (${currentDraftIndex + 1} of ${toolDrafts.length})`
+                )}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate(-1)}
+                className="flex-1"
+              >
+                Cancel
               </Button>
               <Button
                 type="submit"
@@ -1151,29 +1188,13 @@ const AddTool = () => {
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating {toolDrafts.length} Tools...
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding Tool...
                   </>
                 ) : (
-                  `Save All ${toolDrafts.length} Tools`
+                  "Add Tool"
                 )}
               </Button>
             </div>
-          )}
-          
-          {!isBatchMode && (
-            <Button
-              type="submit"
-              disabled={isLoading || loadingCategories || categories.length === 0}
-              className="w-full"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding Tool...
-                </>
-              ) : (
-                "Add Tool"
-              )}
-            </Button>
           )}
         </form>
       </Form>
