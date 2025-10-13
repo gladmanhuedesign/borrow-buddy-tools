@@ -498,7 +498,17 @@ const GroupDetail = () => {
                           )}
                         </div>
                         <div className="mt-2 flex items-center gap-2">
-                          <Badge variant={tool.status === 'available' ? 'default' : 'secondary'} className="text-xs">
+                          <Badge 
+                            className={`text-xs ${
+                              tool.status === 'available' 
+                                ? 'bg-green-600 hover:bg-green-700 text-white' 
+                                : tool.status === 'borrowed'
+                                ? 'bg-orange-600 hover:bg-orange-700 text-white'
+                                : tool.status === 'unavailable'
+                                ? 'bg-red-600 hover:bg-red-700 text-white'
+                                : 'bg-gray-600 hover:bg-gray-700 text-white'
+                            }`}
+                          >
                             {tool.status}
                           </Badge>
                         </div>
