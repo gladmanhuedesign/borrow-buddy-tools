@@ -253,6 +253,17 @@ const AddTool = () => {
         setIsLoading(true);
         const currentDraft = toolDrafts[currentDraftIndex];
         
+        // Validate category is selected
+        if (!data.categoryId || data.categoryId === '') {
+          toast({
+            title: "Category required",
+            description: "Please select a category for this tool before saving.",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+        
         // Upload image for current tool
         let imageUrl: string | null = null;
         if (currentDraft.file) {
