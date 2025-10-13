@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle
 } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, Wrench } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -80,7 +80,13 @@ const Login = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
-      <Card className="w-full max-w-md">
+      <div className="w-full max-w-md space-y-6">
+        <Link to="/" className="flex items-center justify-center gap-2 font-bold text-2xl">
+          <Wrench className="h-7 w-7" />
+          <span>Borrow Buddy</span>
+        </Link>
+        
+        <Card className="w-full">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
           <CardDescription>
@@ -145,6 +151,7 @@ const Login = () => {
           </div>
         </CardFooter>
       </Card>
+      </div>
     </div>
   );
 };
