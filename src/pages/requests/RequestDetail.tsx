@@ -176,6 +176,18 @@ const RequestDetail = () => {
           }));
           
           setMessages(messagesWithProfiles as Message[]);
+          
+          // Mark unread messages from other party as read
+          const unreadMessageIds = messagesWithProfiles
+            .filter(msg => msg.sender_id !== currentUser.id && !msg.is_read)
+            .map(msg => msg.id);
+          
+          if (unreadMessageIds.length > 0) {
+            await supabase
+              .from('request_messages')
+              .update({ is_read: true })
+              .in('id', unreadMessageIds);
+          }
         }
         
         setLoading(false);
@@ -211,13 +223,20 @@ const RequestDetail = () => {
             .eq("id", payload.new.sender_id)
             .single();
 
-          setMessages((prev) => [
-            ...prev,
-            {
-              ...payload.new,
-              profiles: profile,
-            } as Message,
-          ]);
+          const newMessage = {
+            ...payload.new,
+            profiles: profile,
+          } as Message;
+
+          setMessages((prev) => [...prev, newMessage]);
+          
+          // Mark as read if it's from the other party
+          if (payload.new.sender_id !== currentUser?.id) {
+            await supabase
+              .from('request_messages')
+              .update({ is_read: true })
+              .eq('id', payload.new.id);
+          }
         }
       )
       .subscribe();
