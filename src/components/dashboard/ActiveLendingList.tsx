@@ -61,7 +61,8 @@ export const ActiveLendingList = () => {
           start_date,
           end_date,
           picked_up_at,
-          tools (
+          requester_id,
+          tools!inner (
             id,
             name,
             description,
@@ -69,7 +70,7 @@ export const ActiveLendingList = () => {
             brand,
             power_source
           ),
-          profiles (
+          profiles!tool_requests_requester_id_fkey (
             display_name
           )
         `)
