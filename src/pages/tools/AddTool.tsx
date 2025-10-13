@@ -1081,45 +1081,61 @@ const AddTool = () => {
             </Collapsible>
           )}
           
-          <FormItem>
-            <FormLabel>Tool Image</FormLabel>
-            <div className="grid w-full gap-2">
-              <div className="border rounded-md p-4">
-                {previewUrl ? (
-                  <div className="relative aspect-video overflow-hidden rounded-md">
-                    <img
-                      src={previewUrl}
-                      alt="Tool preview"
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex h-40 flex-col items-center justify-center rounded-md border border-dashed text-center">
-                    <Upload className="h-10 w-10 text-muted-foreground" />
-                    <p className="mt-2 text-sm font-medium">
-                      Drag and drop or click to upload
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      JPG, PNG or WEBP (max 5MB)
-                    </p>
-                  </div>
-                )}
-                <Input
-                  id="image-upload"
-                  type="file"
-                  className="mt-2"
-                  accept="image/png, image/jpeg, image/jpg, image/webp"
-                  onChange={handleFileChange}
-                  disabled={isBatchMode}
+          {/* Current Tool Image Preview (Batch Mode) */}
+          {isBatchMode && toolDrafts.length > 0 && toolDrafts[currentDraftIndex]?.imagePreview && (
+            <FormItem>
+              <FormLabel>Tool Image</FormLabel>
+              <div className="relative aspect-video overflow-hidden rounded-lg border">
+                <img
+                  src={toolDrafts[currentDraftIndex].imagePreview}
+                  alt="Current tool preview"
+                  className="h-full w-full object-contain bg-muted"
                 />
               </div>
-              {form.formState.errors.image && (
-                <p className="text-sm font-medium text-destructive">
-                  {form.formState.errors.image.message}
-                </p>
-              )}
-            </div>
-          </FormItem>
+            </FormItem>
+          )}
+          
+          {/* Tool Image Upload (Single Mode) */}
+          {!isBatchMode && (
+            <FormItem>
+              <FormLabel>Tool Image</FormLabel>
+              <div className="grid w-full gap-2">
+                <div className="border rounded-md p-4">
+                  {previewUrl ? (
+                    <div className="relative aspect-video overflow-hidden rounded-md">
+                      <img
+                        src={previewUrl}
+                        alt="Tool preview"
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex h-40 flex-col items-center justify-center rounded-md border border-dashed text-center">
+                      <Upload className="h-10 w-10 text-muted-foreground" />
+                      <p className="mt-2 text-sm font-medium">
+                        Drag and drop or click to upload
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        JPG, PNG or WEBP (max 5MB)
+                      </p>
+                    </div>
+                  )}
+                  <Input
+                    id="image-upload"
+                    type="file"
+                    className="mt-2"
+                    accept="image/png, image/jpeg, image/jpg, image/webp"
+                    onChange={handleFileChange}
+                  />
+                </div>
+                {form.formState.errors.image && (
+                  <p className="text-sm font-medium text-destructive">
+                    {form.formState.errors.image.message}
+                  </p>
+                )}
+              </div>
+            </FormItem>
+          )}
           
           <FormField
             control={form.control}
@@ -1141,7 +1157,7 @@ const AddTool = () => {
           
           {/* Button Section */}
           {isBatchMode && toolDrafts.length > 0 ? (
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <Button
                 type="button"
                 variant="outline"
@@ -1155,21 +1171,22 @@ const AddTool = () => {
                     description: "Previously saved tools are still in your inventory.",
                   });
                 }}
-                className="flex-1"
+                className="flex-1 text-sm"
               >
-                Cancel Remaining ({toolDrafts.length} left)
+                Cancel Remaining ({toolDrafts.length})
               </Button>
               <Button
                 type="button"
                 variant="ghost"
                 onClick={skipCurrentTool}
+                className="text-sm"
               >
                 Skip This Tool
               </Button>
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="flex-1"
+                className="flex-1 text-sm"
               >
                 {isLoading ? (
                   <>
@@ -1178,7 +1195,7 @@ const AddTool = () => {
                 ) : toolDrafts.length === 1 ? (
                   "Save & Finish"
                 ) : (
-                  `Save & Next (${currentDraftIndex + 1} of ${toolDrafts.length})`
+                  `Save & Next (${currentDraftIndex + 1}/${toolDrafts.length})`
                 )}
               </Button>
             </div>
