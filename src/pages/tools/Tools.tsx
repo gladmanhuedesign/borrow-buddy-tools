@@ -103,18 +103,19 @@ const Tools = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <h1 className="text-2xl font-bold">My Tools</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <Button 
             variant="outline" 
             onClick={handleBatchAnalysis}
             disabled={analyzing || tools.length === 0}
+            className="w-full sm:w-auto"
           >
             <Sparkles className="mr-2 h-4 w-4" /> 
-            {analyzing ? "Analyzing..." : "Auto-fill Brand & Power"}
+            <span className="truncate">{analyzing ? "Analyzing..." : "Auto-fill Brand & Power"}</span>
           </Button>
-          <Button onClick={() => navigate("/tools/add")}>
+          <Button onClick={() => navigate("/tools/add")} className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" /> Add Tool
           </Button>
         </div>
