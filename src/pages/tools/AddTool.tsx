@@ -8,10 +8,11 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "@/components/ui/use-toast";
-import { ArrowLeft, Upload, Loader2, ChevronDown, ChevronRight } from "lucide-react";
+import { ArrowLeft, Upload, Loader2, ChevronDown, ChevronRight, Camera, Sparkles } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Card } from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -74,6 +75,14 @@ const AddTool = () => {
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState<{
+    tool_name: string;
+    description: string;
+    category: string;
+    condition: string;
+    confidence: number;
+  } | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -296,12 +305,109 @@ const AddTool = () => {
     }
   };
 
+  // Handle AI-powered tool scanning
+  const handleAIScan = async (file: File) => {
+    try {
+      setIsAnalyzing(true);
+      setAiSuggestion(null);
+
+      // Convert file to base64
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      
+      await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+      });
+
+      const base64Image = reader.result as string;
+
+      // Call edge function
+      const { data, error } = await supabase.functions.invoke('analyze-tool-image', {
+        body: { image: base64Image }
+      });
+
+      if (error) {
+        console.error('AI analysis error:', error);
+        
+        if (error.message?.includes('429') || error.message?.includes('rate limit')) {
+          toast({
+            title: "Rate limit exceeded",
+            description: "Please try again in a few moments.",
+            variant: "destructive",
+          });
+        } else if (error.message?.includes('402') || error.message?.includes('Payment')) {
+          toast({
+            title: "Credits needed",
+            description: "Please add credits to your Lovable AI workspace.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "AI analysis failed",
+            description: "Unable to analyze the image. You can still fill the form manually.",
+            variant: "destructive",
+          });
+        }
+        return;
+      }
+
+      if (data?.success && data?.data) {
+        const suggestion = data.data;
+        setAiSuggestion(suggestion);
+
+        // Find matching category
+        const matchingCategory = categories.find(
+          cat => cat.name.toLowerCase() === suggestion.category.toLowerCase()
+        );
+
+        // Pre-fill form with AI suggestions
+        form.setValue('name', suggestion.tool_name);
+        form.setValue('description', suggestion.description);
+        if (matchingCategory) {
+          form.setValue('categoryId', matchingCategory.id);
+        }
+        form.setValue('condition', suggestion.condition as ToolCondition);
+
+        toast({
+          title: "AI Analysis Complete! 🎉",
+          description: `Tool identified with ${suggestion.confidence}% confidence. Review and edit as needed.`,
+        });
+      }
+    } catch (error) {
+      console.error('AI scan error:', error);
+      toast({
+        title: "Analysis error",
+        description: "Something went wrong. Please try again or fill the form manually.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   // Handle image file selection
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       form.setValue("image", file);
+      
+      // Automatically trigger AI scan
+      await handleAIScan(file);
     }
+  };
+
+  // Handle camera capture
+  const handleCameraCapture = () => {
+    const input = document.getElementById('image-upload') as HTMLInputElement;
+    if (input) {
+      input.click();
+    }
+  };
+
+  // Clear AI suggestion and reset to manual entry
+  const clearAISuggestion = () => {
+    setAiSuggestion(null);
   };
 
   return (
@@ -320,6 +426,74 @@ const AddTool = () => {
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          
+          {/* AI Scan Section */}
+          <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                <h3 className="font-semibold text-lg">AI Tool Scanner</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Take a photo or upload an image, and AI will automatically identify your tool and fill out the form.
+              </p>
+              
+              {aiSuggestion && (
+                <div className="bg-background rounded-lg p-4 space-y-2 border">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-primary">
+                      ✓ AI Identified: {aiSuggestion.tool_name}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {aiSuggestion.confidence}% confident
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Form has been pre-filled. Review and edit as needed below.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearAISuggestion}
+                    className="h-7 text-xs"
+                  >
+                    Clear AI Data
+                  </Button>
+                </div>
+              )}
+              
+              <Button
+                type="button"
+                onClick={handleCameraCapture}
+                disabled={isAnalyzing || loadingCategories}
+                className="w-full"
+                variant="default"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <Camera className="mr-2 h-4 w-4" /> Scan Tool with AI
+                  </>
+                )}
+              </Button>
+            </div>
+          </Card>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or enter manually
+              </span>
+            </div>
+          </div>
+
           <FormField
             control={form.control}
             name="name"
