@@ -246,11 +246,6 @@ const RequestDetail = () => {
 
       // Message will be added via real-time subscription
       setMessageText("");
-      
-      toast({
-        title: "Message sent",
-        description: "Your message has been sent.",
-      });
     } catch (error) {
       console.error("Error sending message:", error);
       toast({

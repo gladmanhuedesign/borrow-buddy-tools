@@ -68,18 +68,24 @@ export const ActiveBorrowingList = () => {
       
       if (error) throw error;
       
-      // Fetch unread message counts for each request
+      // Fetch unread and total message counts for each request
       const requestsWithMessages = await Promise.all((data || []).map(async (request) => {
-        const { count } = await supabase
+        const { count: unreadCount } = await supabase
           .from('request_messages')
           .select('*', { count: 'exact', head: true })
           .eq('request_id', request.id)
           .eq('is_read', false)
           .neq('sender_id', currentUser.id);
         
+        const { count: totalCount } = await supabase
+          .from('request_messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('request_id', request.id);
+        
         return {
           ...request,
-          unread_count: count || 0
+          unread_count: unreadCount || 0,
+          total_message_count: totalCount || 0
         };
       }));
       
@@ -195,10 +201,13 @@ export const ActiveBorrowingList = () => {
                           {request.status.replace('_', ' ')}
                         </Badge>
                       )}
-                      {request.unread_count > 0 && (
-                        <Badge variant="default" className="ml-auto flex items-center gap-1">
+                      {request.total_message_count > 0 && (
+                        <Badge 
+                          variant={request.unread_count > 0 ? "default" : "secondary"} 
+                          className="ml-auto flex items-center gap-1"
+                        >
                           <MessageCircle className="h-3 w-3" />
-                          {request.unread_count}
+                          {request.unread_count > 0 ? request.unread_count : request.total_message_count}
                         </Badge>
                       )}
                     </div>
