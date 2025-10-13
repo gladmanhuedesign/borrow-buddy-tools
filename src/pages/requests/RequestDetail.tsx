@@ -43,6 +43,7 @@ interface RequestDetail {
     id: string;
     name: string;
     description: string | null;
+    image_url: string | null;
     status: string;
     owner_id: string;
     profiles: {
@@ -428,131 +429,184 @@ const RequestDetail = () => {
         <RequestStatusBadge status={request.status} />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Request Details</CardTitle>
-          <CardDescription>
-            {isOwner 
-              ? `${request.profiles?.display_name} wants to borrow your ${request.tools?.name}`
-              : `You requested to borrow ${request.tools?.name} from ${request.tools?.profiles?.display_name}`}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-medium text-sm text-muted-foreground">Start Date</h4>
-                <p>{new Date(request.start_date).toLocaleDateString()}</p>
-              </div>
-              <div>
-                <h4 className="font-medium text-sm text-muted-foreground">End Date</h4>
-                <p>{new Date(request.end_date).toLocaleDateString()}</p>
-              </div>
-            </div>
-            
-            <div>
-              <h4 className="font-medium text-sm text-muted-foreground">Request Date</h4>
-              <p>{formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}</p>
-            </div>
-
-            {request.picked_up_at && (
-              <div>
-                <h4 className="font-medium text-sm text-muted-foreground">Picked Up</h4>
-                <p className="text-green-600">{new Date(request.picked_up_at).toLocaleDateString()}</p>
-              </div>
-            )}
-
-            {request.returned_at && (
-              <div>
-                <h4 className="font-medium text-sm text-muted-foreground">Returned</h4>
-                <p className="text-blue-600">{new Date(request.returned_at).toLocaleDateString()}</p>
-              </div>
-            )}
-
-            {request.return_notes && (
-              <div>
-                <h4 className="font-medium text-sm text-muted-foreground">Return Notes</h4>
-                <p className="text-sm">{request.return_notes}</p>
-              </div>
-            )}
-            
-            {request.message && (
-              <div>
-                <h4 className="font-medium text-sm text-muted-foreground">Message</h4>
-                <p className="text-sm">{request.message}</p>
-              </div>
-            )}
-            
-            <div>
-              <h4 className="font-medium text-sm text-muted-foreground">Tool Status</h4>
-              <Badge variant="outline">{request.tools?.status}</Badge>
-            </div>
-            
-            {/* Action buttons based on user role and request status */}
-            <div className="flex space-x-2 pt-4 border-t">
-              {getActionButtons()}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Messages</CardTitle>
-          <CardDescription>Communicate about this request</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="border rounded-lg p-4 h-[300px] overflow-y-auto flex flex-col space-y-4">
-              {messages.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center text-muted-foreground">
-                  No messages yet. Start the conversation!
-                </div>
-              ) : (
-                messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`rounded-lg p-3 max-w-[80%] ${
-                      message.sender_id === currentUser?.id
-                        ? "bg-primary text-primary-foreground self-end"
-                        : "bg-muted self-start"
-                    }`}
-                  >
-                    <div className="text-xs mb-1 opacity-70">
-                      {message.sender_id === currentUser?.id ? "You" : message.profiles?.display_name}
-                    </div>
-                    <div>{message.content}</div>
-                    <div className="text-xs mt-1 opacity-70 text-right">
-                      {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
-                    </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Request Details</CardTitle>
+              <CardDescription>
+                {isOwner 
+                  ? `${request.profiles?.display_name} wants to borrow your ${request.tools?.name}`
+                  : `You requested to borrow ${request.tools?.name} from ${request.tools?.profiles?.display_name}`}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground">Start Date</h4>
+                    <p>{new Date(request.start_date).toLocaleDateString()}</p>
                   </div>
-                ))
-              )}
-            </div>
-            
-            <div className="flex space-x-2">
-              <Textarea
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                placeholder="Type your message here..."
-                className="flex-1"
-                rows={2}
-              />
-              <Button 
-                onClick={handleSendMessage}
-                disabled={!messageText.trim() || sendingMessage}
-                className="self-end"
-              >
-                {sendingMessage ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground">End Date</h4>
+                    <p>{new Date(request.end_date).toLocaleDateString()}</p>
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium text-sm text-muted-foreground">Request Date</h4>
+                  <p>{formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}</p>
+                </div>
+
+                {request.picked_up_at && (
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground">Picked Up</h4>
+                    <p className="text-green-600">{new Date(request.picked_up_at).toLocaleDateString()}</p>
+                  </div>
                 )}
+
+                {request.returned_at && (
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground">Returned</h4>
+                    <p className="text-blue-600">{new Date(request.returned_at).toLocaleDateString()}</p>
+                  </div>
+                )}
+
+                {request.return_notes && (
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground">Return Notes</h4>
+                    <p className="text-sm">{request.return_notes}</p>
+                  </div>
+                )}
+                
+                {request.message && (
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground">Message</h4>
+                    <p className="text-sm">{request.message}</p>
+                  </div>
+                )}
+                
+                <div>
+                  <h4 className="font-medium text-sm text-muted-foreground">Tool Status</h4>
+                  <Badge variant="outline">{request.tools?.status}</Badge>
+                </div>
+                
+                {/* Action buttons based on user role and request status */}
+                <div className="flex space-x-2 pt-4 border-t">
+                  {getActionButtons()}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Messages</CardTitle>
+              <CardDescription>Communicate about this request</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="border rounded-lg p-4 h-[300px] overflow-y-auto flex flex-col space-y-4">
+                  {messages.length === 0 ? (
+                    <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                      No messages yet. Start the conversation!
+                    </div>
+                  ) : (
+                    messages.map((message) => (
+                      <div
+                        key={message.id}
+                        className={`rounded-lg p-3 max-w-[80%] ${
+                          message.sender_id === currentUser?.id
+                            ? "bg-primary text-primary-foreground self-end"
+                            : "bg-muted self-start"
+                        }`}
+                      >
+                        <div className="text-xs mb-1 opacity-70">
+                          {message.sender_id === currentUser?.id ? "You" : message.profiles?.display_name}
+                        </div>
+                        <div>{message.content}</div>
+                        <div className="text-xs mt-1 opacity-70 text-right">
+                          {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                
+                <div className="flex space-x-2">
+                  <Textarea
+                    value={messageText}
+                    onChange={(e) => setMessageText(e.target.value)}
+                    placeholder="Type your message here..."
+                    className="flex-1"
+                    rows={2}
+                  />
+                  <Button 
+                    onClick={handleSendMessage}
+                    disabled={!messageText.trim() || sendingMessage}
+                    className="self-end"
+                  >
+                    {sendingMessage ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Tool Information Sidebar */}
+        <div className="lg:col-span-1">
+          <Card className="sticky top-6">
+            <CardHeader>
+              <CardTitle>Tool Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {request.tools?.image_url && (
+                <div className="aspect-square rounded-lg overflow-hidden bg-muted">
+                  <img 
+                    src={request.tools.image_url} 
+                    alt={request.tools.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              
+              <div>
+                <h3 className="font-semibold text-lg">{request.tools?.name}</h3>
+              </div>
+
+              {request.tools?.description && (
+                <div>
+                  <h4 className="font-medium text-sm text-muted-foreground mb-1">Description</h4>
+                  <p className="text-sm">{request.tools.description}</p>
+                </div>
+              )}
+
+              <div>
+                <h4 className="font-medium text-sm text-muted-foreground mb-1">Owner</h4>
+                <p className="text-sm font-medium">{request.tools?.profiles?.display_name}</p>
+              </div>
+
+              <div>
+                <h4 className="font-medium text-sm text-muted-foreground mb-1">Current Status</h4>
+                <Badge variant="outline">{request.tools?.status}</Badge>
+              </div>
+
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => navigate(`/tools/${request.tools?.id}`)}
+              >
+                View Full Tool Details
               </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };
