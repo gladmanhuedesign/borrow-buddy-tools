@@ -341,6 +341,10 @@ const AddTool = () => {
           // Move to next tool
           setToolDrafts(updatedDrafts);
           populateFormFromDraft(updatedDrafts[0]);
+          
+          // Scroll to top of form
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          
           toast({
             title: "Tool saved!",
             description: `Review the next tool (${updatedDrafts.length} remaining).`,
