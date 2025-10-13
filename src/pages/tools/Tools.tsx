@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toolStatusLabels } from "@/config/toolCategories";
@@ -25,6 +25,7 @@ const Tools = () => {
   const { currentUser } = useAuth();
   const [tools, setTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
+  const [analyzing, setAnalyzing] = useState(false);
 
   useEffect(() => {
     const fetchUserTools = async () => {
@@ -66,13 +67,55 @@ const Tools = () => {
     fetchUserTools();
   }, [currentUser]);
 
+  const handleBatchAnalysis = async () => {
+    setAnalyzing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('batch-analyze-tools');
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Analysis Complete",
+        description: `Processed ${data.processed} tools, updated ${data.updated}, failed ${data.failed}`,
+      });
+      
+      // Refresh the tools list
+      const { data: toolsData } = await supabase
+        .from('tools')
+        .select('*')
+        .eq('owner_id', currentUser?.id)
+        .order('created_at', { ascending: false });
+      
+      setTools(toolsData || []);
+    } catch (error: any) {
+      console.error('Batch analysis error:', error);
+      toast({
+        title: "Analysis Failed",
+        description: error.message || "Failed to analyze tools",
+        variant: "destructive",
+      });
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">My Tools</h1>
-        <Button onClick={() => navigate("/tools/add")}>
-          <Plus className="mr-2 h-4 w-4" /> Add Tool
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleBatchAnalysis}
+            disabled={analyzing || tools.length === 0}
+          >
+            <Sparkles className="mr-2 h-4 w-4" /> 
+            {analyzing ? "Analyzing..." : "Auto-fill Brand & Power"}
+          </Button>
+          <Button onClick={() => navigate("/tools/add")}>
+            <Plus className="mr-2 h-4 w-4" /> Add Tool
+          </Button>
+        </div>
       </div>
       
       {loading ? (
