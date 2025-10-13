@@ -366,8 +366,8 @@ const EditTool = () => {
         description: `"${data.name}" has been updated.`,
       });
       
-      // Navigate back to tool detail
-      navigate(`/tools/${tool.id}`);
+      // Navigate back to tool detail (replace history to prevent back button loop)
+      navigate(`/tools/${tool.id}`, { replace: true });
     } catch (error) {
       console.error("Tool update failed:", error);
       toast({
@@ -707,7 +707,7 @@ const EditTool = () => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate(`/tools/${tool.id}`)}
+              onClick={() => navigate(`/tools/${tool.id}`, { replace: true })}
             >
               Cancel
             </Button>
