@@ -44,8 +44,14 @@ interface RequestDetail {
     name: string;
     description: string | null;
     image_url: string | null;
+    brand: string | null;
+    condition: string | null;
     status: string;
     owner_id: string;
+    category_id: string | null;
+    tool_categories: {
+      name: string;
+    } | null;
     profiles: {
       display_name: string;
     } | null;
@@ -105,8 +111,15 @@ const RequestDetail = () => {
               id,
               name,
               description,
+              image_url,
+              brand,
+              condition,
               status,
               owner_id,
+              category_id,
+              tool_categories (
+                name
+              ),
               profiles:owner_id (
                 display_name
               )
@@ -578,6 +591,27 @@ const RequestDetail = () => {
               <div>
                 <h3 className="font-semibold text-lg">{request.tools?.name}</h3>
               </div>
+
+              {request.tools?.brand && (
+                <div>
+                  <h4 className="font-medium text-sm text-muted-foreground mb-1">Brand</h4>
+                  <p className="text-sm font-medium">{request.tools.brand}</p>
+                </div>
+              )}
+
+              {request.tools?.tool_categories && (
+                <div>
+                  <h4 className="font-medium text-sm text-muted-foreground mb-1">Category</h4>
+                  <Badge variant="secondary">{request.tools.tool_categories.name}</Badge>
+                </div>
+              )}
+
+              {request.tools?.condition && (
+                <div>
+                  <h4 className="font-medium text-sm text-muted-foreground mb-1">Condition</h4>
+                  <Badge variant="outline" className="capitalize">{request.tools.condition}</Badge>
+                </div>
+              )}
 
               {request.tools?.description && (
                 <div>
