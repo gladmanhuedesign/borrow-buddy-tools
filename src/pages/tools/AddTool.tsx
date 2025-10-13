@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "@/components/ui/use-toast";
-import { ArrowLeft, Upload, Loader2, ChevronDown, ChevronRight, Camera, Sparkles } from "lucide-react";
+import { ArrowLeft, Upload, Loader2, ChevronDown, ChevronRight, Camera, Sparkles, Images } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,6 +30,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ToolReviewCarousel } from "@/components/tools/ToolReviewCarousel";
+import { ToolDraft } from "@/types/toolDraft";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -84,6 +87,15 @@ const AddTool = () => {
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+  
+  // Multi-image batch mode states
+  const [toolDrafts, setToolDrafts] = useState<ToolDraft[]>([]);
+  const [currentDraftIndex, setCurrentDraftIndex] = useState(0);
+  const [isBatchMode, setIsBatchMode] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [analyzingProgress, setAnalyzingProgress] = useState({ current: 0, total: 0 });
+  
+  // Legacy single-image mode states
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<{
     tool_name: string;
@@ -239,6 +251,13 @@ const AddTool = () => {
   const onSubmit = async (data: FormValues) => {
     if (!currentUser) return;
     
+    // Handle batch mode submission
+    if (isBatchMode && toolDrafts.length > 0) {
+      await handleBatchSubmit();
+      return;
+    }
+    
+    // Single tool submission
     try {
       setIsLoading(true);
       console.log("Creating tool:", data);
@@ -313,6 +332,84 @@ const AddTool = () => {
       toast({
         title: "Failed to add tool",
         description: "An error occurred while adding your tool.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle batch tool creation
+  const handleBatchSubmit = async () => {
+    if (!currentUser) return;
+    
+    try {
+      setIsLoading(true);
+      
+      // Save current form data to current draft
+      const currentDraft = toolDrafts[currentDraftIndex];
+      currentDraft.formData = form.getValues() as any;
+      
+      let successCount = 0;
+      let failCount = 0;
+      
+      for (let i = 0; i < toolDrafts.length; i++) {
+        const draft = toolDrafts[i];
+        
+        try {
+          // Upload image
+          let imageUrl: string | null = null;
+          if (draft.file) {
+            imageUrl = await uploadImage(draft.file);
+          }
+          
+          // Insert tool
+          const { data: toolData, error } = await supabase
+            .from('tools')
+            .insert({
+              name: draft.formData.name,
+              description: draft.formData.description,
+              category_id: draft.formData.categoryId,
+              owner_id: currentUser.id,
+              image_url: imageUrl,
+              status: 'available',
+              brand: draft.formData.brand || null,
+              power_source: draft.formData.powerSource || null,
+            })
+            .select('id')
+            .single();
+          
+          if (error) throw error;
+          
+          // Handle group visibility
+          if (groups.length > 0 && draft.formData.hiddenFromGroups && draft.formData.hiddenFromGroups.length > 0) {
+            const visibilityInserts = draft.formData.hiddenFromGroups.map(groupId => ({
+              tool_id: toolData.id,
+              group_id: groupId,
+              is_hidden: true
+            }));
+            
+            await supabase.from('tool_group_visibility').insert(visibilityInserts);
+          }
+          
+          successCount++;
+        } catch (error) {
+          console.error(`Failed to create tool ${i + 1}:`, error);
+          failCount++;
+        }
+      }
+      
+      toast({
+        title: "Batch creation complete!",
+        description: `${successCount} tools added successfully${failCount > 0 ? `, ${failCount} failed` : ''}.`,
+      });
+      
+      navigate("/tools");
+    } catch (error) {
+      console.error("Batch creation error:", error);
+      toast({
+        title: "Batch creation failed",
+        description: "An error occurred while creating tools.",
         variant: "destructive",
       });
     } finally {
@@ -414,13 +511,114 @@ const AddTool = () => {
     }
   };
 
-  // Handle image file selection
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      form.setValue("image", file);
+  // Handle batch image analysis
+  const handleBatchAIScan = async (files: File[]) => {
+    const newDrafts: ToolDraft[] = [];
+    
+    setAnalyzingProgress({ current: 0, total: files.length });
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const tempId = `draft-${Date.now()}-${i}`;
       
-      // Automatically trigger AI scan
+      // Create image preview
+      const reader = new FileReader();
+      const imagePreview = await new Promise<string>((resolve) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      });
+      
+      // Initialize draft
+      const draft: ToolDraft = {
+        id: tempId,
+        file,
+        imagePreview,
+        aiSuggestion: null,
+        formData: {
+          name: '',
+          description: '',
+          categoryId: '',
+          condition: ToolCondition.GOOD,
+          brand: '',
+          powerSource: undefined,
+        },
+        status: 'analyzing',
+      };
+      
+      newDrafts.push(draft);
+      setToolDrafts([...newDrafts]);
+      setAnalyzingProgress({ current: i + 1, total: files.length });
+      
+      // Analyze with AI
+      try {
+        const base64Image = imagePreview;
+        const { data, error } = await supabase.functions.invoke('analyze-tool-image', {
+          body: { image: base64Image }
+        });
+        
+        if (error) throw error;
+        
+        if (data?.success && data?.data) {
+          const suggestion = data.data;
+          const matchingCategory = categories.find(
+            cat => cat.name.toLowerCase() === suggestion.category.toLowerCase()
+          );
+          
+          draft.aiSuggestion = suggestion;
+          draft.formData = {
+            name: suggestion.tool_name,
+            description: suggestion.description,
+            categoryId: matchingCategory?.id || '',
+            condition: suggestion.condition as ToolCondition,
+            brand: suggestion.brand || '',
+            powerSource: suggestion.power_source ? 
+              (suggestion.power_source.toUpperCase() as keyof typeof ToolPowerSource) : undefined,
+          };
+          draft.status = 'analyzed';
+        } else {
+          draft.status = 'error';
+          draft.error = 'AI analysis returned no data';
+        }
+      } catch (error) {
+        console.error('AI analysis error for file', i, error);
+        draft.status = 'error';
+        draft.error = error instanceof Error ? error.message : 'Analysis failed';
+      }
+      
+      setToolDrafts([...newDrafts]);
+      
+      // Small delay to avoid rate limits
+      if (i < files.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+    
+    setAnalyzingProgress({ current: 0, total: 0 });
+    
+    toast({
+      title: "Batch analysis complete!",
+      description: `${newDrafts.filter(d => d.status === 'analyzed').length} of ${files.length} tools analyzed successfully.`,
+    });
+  };
+
+  // Handle image file selection (single or multiple)
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    const fileArray = Array.from(files);
+    
+    // If multiple files selected, enter batch mode
+    if (fileArray.length > 1) {
+      setIsBatchMode(true);
+      setUploadedFiles(fileArray);
+      setCurrentDraftIndex(0);
+      await handleBatchAIScan(fileArray);
+    } else {
+      // Single file mode (legacy)
+      const file = fileArray[0];
+      setIsBatchMode(false);
+      form.setValue("image", file);
       await handleAIScan(file);
     }
   };
@@ -437,6 +635,71 @@ const AddTool = () => {
   const clearAISuggestion = () => {
     setAiSuggestion(null);
   };
+
+  // Batch mode handlers
+  const handleNextDraft = () => {
+    if (currentDraftIndex < toolDrafts.length - 1) {
+      // Save current form data to current draft
+      const currentDraft = toolDrafts[currentDraftIndex];
+      currentDraft.formData = form.getValues() as any;
+      currentDraft.status = 'edited';
+      
+      setCurrentDraftIndex(currentDraftIndex + 1);
+      
+      // Load next draft into form
+      const nextDraft = toolDrafts[currentDraftIndex + 1];
+      if (nextDraft) {
+        populateFormFromDraft(nextDraft);
+      }
+    }
+  };
+
+  const handlePreviousDraft = () => {
+    if (currentDraftIndex > 0) {
+      // Save current form data
+      const currentDraft = toolDrafts[currentDraftIndex];
+      currentDraft.formData = form.getValues() as any;
+      
+      setCurrentDraftIndex(currentDraftIndex - 1);
+      
+      // Load previous draft into form
+      const prevDraft = toolDrafts[currentDraftIndex - 1];
+      if (prevDraft) {
+        populateFormFromDraft(prevDraft);
+      }
+    }
+  };
+
+  const handleRemoveDraft = (index: number) => {
+    const newDrafts = toolDrafts.filter((_, i) => i !== index);
+    setToolDrafts(newDrafts);
+    
+    if (newDrafts.length === 0) {
+      setIsBatchMode(false);
+      setCurrentDraftIndex(0);
+    } else if (currentDraftIndex >= newDrafts.length) {
+      setCurrentDraftIndex(newDrafts.length - 1);
+      populateFormFromDraft(newDrafts[newDrafts.length - 1]);
+    }
+  };
+
+  const populateFormFromDraft = (draft: ToolDraft) => {
+    form.setValue('name', draft.formData.name);
+    form.setValue('description', draft.formData.description);
+    form.setValue('categoryId', draft.formData.categoryId);
+    form.setValue('condition', draft.formData.condition as ToolCondition);
+    form.setValue('brand', draft.formData.brand || '');
+    form.setValue('powerSource', draft.formData.powerSource as ToolPowerSource | undefined);
+    form.setValue('instructions', draft.formData.instructions || '');
+    form.setValue('hiddenFromGroups', draft.formData.hiddenFromGroups || []);
+  };
+
+  // Load first draft when batch mode starts
+  useEffect(() => {
+    if (isBatchMode && toolDrafts.length > 0 && toolDrafts[currentDraftIndex]) {
+      populateFormFromDraft(toolDrafts[currentDraftIndex]);
+    }
+  }, [isBatchMode, toolDrafts.length]);
 
   return (
     <div className="space-y-6">
@@ -463,8 +726,27 @@ const AddTool = () => {
                 <h3 className="font-semibold text-lg">AI Tool Scanner</h3>
               </div>
               <p className="text-sm text-muted-foreground">
-                Take a photo or upload an image, and AI will automatically identify your tool and fill out the form.
+                Upload one or multiple images - AI will automatically identify your tools and fill out the forms.
               </p>
+              
+              {analyzingProgress.total > 0 && (
+                <div className="bg-background rounded-lg p-4 space-y-2 border">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">
+                      Analyzing tools...
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {analyzingProgress.current} of {analyzingProgress.total}
+                    </span>
+                  </div>
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div 
+                      className="bg-primary h-2 rounded-full transition-all"
+                      style={{ width: `${(analyzingProgress.current / analyzingProgress.total) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )}
               
               {aiSuggestion && (
                 <div className="bg-background rounded-lg p-4 space-y-2 border">
@@ -491,25 +773,53 @@ const AddTool = () => {
                 </div>
               )}
               
-              <Button
-                type="button"
-                onClick={handleCameraCapture}
-                disabled={isAnalyzing || loadingCategories}
-                className="w-full"
-                variant="default"
-              >
-                {isAnalyzing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <Camera className="mr-2 h-4 w-4" /> Scan Tool with AI
-                  </>
-                )}
-              </Button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <Button
+                  type="button"
+                  onClick={handleCameraCapture}
+                  disabled={isAnalyzing || loadingCategories || analyzingProgress.total > 0}
+                  variant="default"
+                >
+                  {isAnalyzing || analyzingProgress.total > 0 ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="mr-2 h-4 w-4" /> Scan Single Tool
+                    </>
+                  )}
+                </Button>
+                
+                <Button
+                  type="button"
+                  onClick={() => {
+                    const input = document.getElementById('image-upload') as HTMLInputElement;
+                    if (input) {
+                      input.setAttribute('multiple', 'true');
+                      input.click();
+                    }
+                  }}
+                  disabled={isAnalyzing || loadingCategories || analyzingProgress.total > 0}
+                  variant="secondary"
+                >
+                  <Images className="mr-2 h-4 w-4" /> Upload Multiple
+                </Button>
+              </div>
             </div>
           </Card>
+
+          {/* Review Carousel for Batch Mode */}
+          {isBatchMode && toolDrafts.length > 0 && (
+            <ToolReviewCarousel
+              drafts={toolDrafts}
+              currentIndex={currentDraftIndex}
+              onNext={handleNextDraft}
+              onPrevious={handlePreviousDraft}
+              onRemove={handleRemoveDraft}
+              totalDrafts={toolDrafts.length}
+            />
+          )}
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
@@ -517,7 +827,7 @@ const AddTool = () => {
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-background px-2 text-muted-foreground">
-                Or enter manually
+                {isBatchMode ? `Edit Tool ${currentDraftIndex + 1} Details` : 'Or enter manually'}
               </span>
             </div>
           </div>
@@ -772,6 +1082,7 @@ const AddTool = () => {
                   className="mt-2"
                   accept="image/png, image/jpeg, image/jpg, image/webp"
                   onChange={handleFileChange}
+                  disabled={isBatchMode}
                 />
               </div>
               {form.formState.errors.image && (
@@ -800,19 +1111,52 @@ const AddTool = () => {
             )}
           />
           
-          <Button
-            type="submit"
-            disabled={isLoading || loadingCategories || categories.length === 0}
-            className="w-full"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding Tool...
-              </>
-            ) : (
-              "Add Tool"
-            )}
-          </Button>
+          {isBatchMode && toolDrafts.length > 0 && (
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsBatchMode(false);
+                  setToolDrafts([]);
+                  setCurrentDraftIndex(0);
+                  form.reset();
+                }}
+                className="flex-1"
+              >
+                Cancel Batch
+              </Button>
+              <Button
+                type="submit"
+                disabled={isLoading || loadingCategories}
+                className="flex-1"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating {toolDrafts.length} Tools...
+                  </>
+                ) : (
+                  `Save All ${toolDrafts.length} Tools`
+                )}
+              </Button>
+            </div>
+          )}
+          
+          {!isBatchMode && (
+            <Button
+              type="submit"
+              disabled={isLoading || loadingCategories || categories.length === 0}
+              className="w-full"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding Tool...
+                </>
+              ) : (
+                "Add Tool"
+              )}
+            </Button>
+          )}
         </form>
       </Form>
     </div>
