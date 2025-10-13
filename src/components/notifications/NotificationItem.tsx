@@ -68,7 +68,7 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
       onClick={handleClick}
       className={cn(
         "p-4 cursor-pointer hover:bg-muted/50 transition-colors",
-        !notification.read && "bg-blue-50/50 border-l-2 border-l-blue-500"
+        !notification.read && "bg-primary/10 border-l-2 border-l-primary"
       )}
     >
       <div className="flex items-start gap-3">
@@ -84,7 +84,7 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
               {notification.title}
             </h4>
             {!notification.read && (
-              <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
+              <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
             )}
           </div>
           <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
