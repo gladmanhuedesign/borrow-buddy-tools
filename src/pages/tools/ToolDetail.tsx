@@ -203,6 +203,39 @@ const ToolDetail = () => {
     }
   };
 
+  const handleToggleAvailability = async () => {
+    if (!tool || !currentUser) return;
+    
+    try {
+      const newStatus = tool.status === "available" ? "unavailable" : "available";
+      
+      const { error } = await supabase
+        .from('tools')
+        .update({ status: newStatus })
+        .eq('id', tool.id);
+
+      if (error) {
+        console.error("Error updating tool status:", error);
+        throw error;
+      }
+      
+      // Update local state
+      setTool({ ...tool, status: newStatus });
+      
+      toast({
+        title: "Tool status updated",
+        description: `${tool.name} is now ${newStatus}.`,
+      });
+    } catch (error) {
+      console.error("Failed to update tool status:", error);
+      toast({
+        title: "Update failed",
+        description: "An error occurred while updating the tool status.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center p-8">
@@ -437,7 +470,12 @@ const ToolDetail = () => {
                   >
                     Edit Tool
                   </Button>
-                  <Button variant="outline" className="w-full" disabled={tool.status !== "available"}>
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    onClick={handleToggleAvailability}
+                    disabled={tool.status === "borrowed"}
+                  >
                     {tool.status === "available" ? "Mark as Unavailable" : "Mark as Available"}
                   </Button>
                 </div>
