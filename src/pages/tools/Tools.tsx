@@ -135,8 +135,7 @@ const Tools = () => {
                         </Badge>
                       )}
                       {tool.power_source && (
-                        <Badge variant="outline" className="text-sm flex items-center gap-1.5">
-                          <Zap className="h-3.5 w-3.5" />
+                        <Badge variant="outline" className="text-xs font-normal border-gray-300 text-gray-600 dark:border-gray-700 dark:text-gray-400">
                           {toolPowerSourceLabels[tool.power_source as keyof typeof toolPowerSourceLabels]}
                         </Badge>
                       )}
