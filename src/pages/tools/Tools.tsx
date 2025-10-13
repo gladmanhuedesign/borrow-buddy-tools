@@ -134,16 +134,11 @@ const Tools = () => {
                           {toolPowerSourceLabels[tool.power_source as keyof typeof toolPowerSourceLabels]}
                         </Badge>
                       )}
-                    </div>
-                  )}
-                </CardHeader>
-                <CardFooter>
-                  <Button variant="outline" size="sm" className="w-full">
-                    View Details
-                  </Button>
-                </CardFooter>
-              </Card>
-            </Link>
+                     </div>
+                   )}
+                 </CardHeader>
+               </Card>
+             </Link>
           ))}
         </div>
       )}
