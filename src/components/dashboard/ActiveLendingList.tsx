@@ -206,18 +206,6 @@ export const ActiveLendingList = () => {
                 </div>
                 
                 <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/tools/${tool.id}`);
-                    }}
-                    className="hover:scale-105 transition-transform duration-200"
-                  >
-                    View History
-                  </Button>
-                  
                   {request.status === 'return_pending' && (
                     <Button
                       size="sm"
