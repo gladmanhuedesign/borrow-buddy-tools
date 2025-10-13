@@ -352,7 +352,7 @@ const Requests = () => {
           ) : sentRequests.length === 0 ? (
             renderEmptyState("outgoing")
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {sentRequests.map((request) => (
                 <Link key={request.id} to={`/requests/${request.id}`}>
                   <Card className="transition-shadow hover:shadow-md">
@@ -412,7 +412,7 @@ const Requests = () => {
           ) : receivedRequests.length === 0 ? (
             renderEmptyState("incoming")
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {receivedRequests.map((request) => (
                 <Card key={request.id} className="transition-shadow hover:shadow-md">
                   <CardHeader className="pb-2">
