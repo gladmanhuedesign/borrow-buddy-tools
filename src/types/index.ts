@@ -48,6 +48,8 @@ export interface Tool {
   groupId: string;
   instructions?: string;
   imageUrl?: string;
+  brand?: string;
+  powerSource?: string;
   createdAt: string;
   updatedAt: string;
 }

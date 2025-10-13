@@ -7,8 +7,8 @@ import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tool } from "@/types";
-import { toolConditionLabels, toolStatusLabels } from "@/config/toolCategories";
-import { ArrowLeft, AlertCircle, Clock, Loader2 } from "lucide-react";
+import { toolConditionLabels, toolStatusLabels, toolPowerSourceLabels } from "@/config/toolCategories";
+import { ArrowLeft, AlertCircle, Clock, Loader2, Zap, Battery, Fuel, Wrench, Wind } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -132,6 +132,8 @@ const ToolDetail = () => {
           groupId: "sample-group-1", // Placeholder since group association isn't implemented yet
           instructions: toolData.description || "",
           imageUrl: toolData.image_url,
+          brand: toolData.brand,
+          powerSource: toolData.power_source,
           createdAt: toolData.created_at,
           updatedAt: toolData.updated_at,
         };
@@ -229,6 +231,20 @@ const ToolDetail = () => {
   // Get today's date for min date validation
   const today = new Date().toISOString().split('T')[0];
 
+  // Helper function to get power source icon
+  const getPowerSourceIcon = (powerSource?: string) => {
+    if (!powerSource) return null;
+    switch (powerSource) {
+      case 'battery': return <Battery className="h-4 w-4" />;
+      case 'corded': return <Zap className="h-4 w-4" />;
+      case 'gas': return <Fuel className="h-4 w-4" />;
+      case 'manual': return <Wrench className="h-4 w-4" />;
+      case 'pneumatic': return <Wind className="h-4 w-4" />;
+      case 'hybrid': return <><Zap className="h-3 w-3" /><Battery className="h-3 w-3" /></>;
+      default: return null;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-2">
@@ -240,7 +256,12 @@ const ToolDetail = () => {
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h1 className="text-2xl font-bold">{tool.name}</h1>
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold">{tool.name}</h1>
+          {tool.brand && (
+            <p className="text-sm text-muted-foreground mt-1">{tool.brand}</p>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -294,6 +315,16 @@ const ToolDetail = () => {
                 <span className="text-muted-foreground">Condition</span>
                 <span>{toolConditionLabels[tool.condition as keyof typeof toolConditionLabels] || tool.condition}</span>
               </div>
+
+              {tool.powerSource && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Power Source</span>
+                  <div className="flex items-center gap-2">
+                    {getPowerSourceIcon(tool.powerSource)}
+                    <span>{toolPowerSourceLabels[tool.powerSource as keyof typeof toolPowerSourceLabels] || tool.powerSource}</span>
+                  </div>
+                </div>
+              )}
               
               {!isOwner && (
                 <div className="mt-6 pt-4 border-t">

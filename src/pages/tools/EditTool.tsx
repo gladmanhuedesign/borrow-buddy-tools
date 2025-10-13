@@ -26,7 +26,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { ToolCondition, toolConditionLabels } from "@/config/toolCategories";
+import { ToolCondition, toolConditionLabels, ToolPowerSource, toolPowerSourceLabels } from "@/config/toolCategories";
 import { supabase } from "@/integrations/supabase/client";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -55,6 +55,8 @@ const formSchema = z.object({
     )
     .optional(),
   hiddenFromGroups: z.array(z.string()).optional(),
+  brand: z.string().trim().max(100, "Brand must be less than 100 characters").optional(),
+  powerSource: z.nativeEnum(ToolPowerSource).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -100,6 +102,8 @@ const EditTool = () => {
       description: "",
       instructions: "",
       hiddenFromGroups: [],
+      brand: "",
+      powerSource: undefined,
     },
   });
 
@@ -188,6 +192,10 @@ const EditTool = () => {
         form.setValue("categoryId", toolData.category_id || "");
         form.setValue("condition", "good" as ToolCondition);
         form.setValue("instructions", toolData.description || "");
+        form.setValue("brand", toolData.brand || "");
+        if (toolData.power_source) {
+          form.setValue("powerSource", toolData.power_source as ToolPowerSource);
+        }
         
         if (toolData.image_url) {
           setPreviewUrl(toolData.image_url);
@@ -312,6 +320,8 @@ const EditTool = () => {
           description: data.description,
           category_id: data.categoryId,
           image_url: imageUrl,
+          brand: data.brand || null,
+          power_source: data.powerSource || null,
         })
         .eq('id', tool.id);
 
@@ -429,6 +439,20 @@ const EditTool = () => {
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form.control}
+            name="brand"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Brand (Optional)</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g., DeWalt, Milwaukee, Bosch" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           
           <FormField
             control={form.control}
@@ -448,7 +472,7 @@ const EditTool = () => {
             )}
           />
           
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-3">
             <FormField
               control={form.control}
               name="categoryId"
@@ -506,6 +530,31 @@ const EditTool = () => {
                           key={value}
                           value={value}
                         >
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="powerSource"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Power Source (Optional)</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select power" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.entries(toolPowerSourceLabels).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
                           {label}
                         </SelectItem>
                       ))}

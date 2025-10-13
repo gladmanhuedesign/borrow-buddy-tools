@@ -41,7 +41,7 @@ serve(async (req) => {
             content: [
               {
                 type: 'text',
-                text: 'Analyze this tool image and extract detailed information. Identify the tool name, provide a detailed description, determine the best matching category, and estimate the condition based on visual appearance.'
+                text: 'Analyze this tool image and extract detailed information. Identify the tool name, brand (if visible), provide a detailed description, determine the best matching category, estimate the condition based on visual appearance, and identify the power source type if visible from the image, labels, or visible features.'
               },
               {
                 type: 'image_url',
@@ -82,6 +82,15 @@ serve(async (req) => {
                   confidence: {
                     type: 'number',
                     description: 'Confidence score from 0-100 for the identification'
+                  },
+                  brand: {
+                    type: 'string',
+                    description: 'The brand or manufacturer name if visible on the tool (e.g., "DeWalt", "Milwaukee", "Bosch", "Craftsman")'
+                  },
+                  power_source: {
+                    type: 'string',
+                    enum: ['battery', 'corded', 'gas', 'manual', 'pneumatic', 'hybrid'],
+                    description: 'The power source type if identifiable: battery (cordless/battery-powered), corded (electric with cord), gas (fuel-powered), manual (hand-powered), pneumatic (air-powered), hybrid (multiple power options)'
                   }
                 },
                 required: ['tool_name', 'description', 'category', 'condition', 'confidence']

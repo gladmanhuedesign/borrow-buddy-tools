@@ -21,8 +21,15 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { ToolCondition, toolConditionLabels } from "@/config/toolCategories";
+import { ToolCondition, toolConditionLabels, ToolPowerSource, toolPowerSourceLabels } from "@/config/toolCategories";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -50,6 +57,8 @@ const formSchema = z.object({
     )
     .optional(),
   hiddenFromGroups: z.array(z.string()).optional(),
+  brand: z.string().trim().max(100, "Brand must be less than 100 characters").optional(),
+  powerSource: z.nativeEnum(ToolPowerSource).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -82,6 +91,8 @@ const AddTool = () => {
     category: string;
     condition: string;
     confidence: number;
+    brand?: string;
+    power_source?: string;
   } | null>(null);
 
   const form = useForm<FormValues>({
@@ -91,6 +102,8 @@ const AddTool = () => {
       description: "",
       instructions: "",
       hiddenFromGroups: [],
+      brand: "",
+      powerSource: undefined,
     },
   });
 
@@ -253,7 +266,9 @@ const AddTool = () => {
           category_id: data.categoryId,
           owner_id: currentUser.id,
           image_url: imageUrl,
-          status: 'available'
+          status: 'available',
+          brand: data.brand || null,
+          power_source: data.powerSource || null,
         })
         .select('id')
         .single();
@@ -368,6 +383,19 @@ const AddTool = () => {
           form.setValue('categoryId', matchingCategory.id);
         }
         form.setValue('condition', suggestion.condition as ToolCondition);
+        
+        // Set brand if available
+        if (suggestion.brand) {
+          form.setValue('brand', suggestion.brand);
+        }
+        
+        // Set power source if available
+        if (suggestion.power_source) {
+          const powerSourceKey = suggestion.power_source.toUpperCase() as keyof typeof ToolPowerSource;
+          if (ToolPowerSource[powerSourceKey]) {
+            form.setValue('powerSource', ToolPowerSource[powerSourceKey]);
+          }
+        }
 
         toast({
           title: "AI Analysis Complete! 🎉",
@@ -507,6 +535,20 @@ const AddTool = () => {
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form.control}
+            name="brand"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Brand (Optional)</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g., DeWalt, Milwaukee, Bosch" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           
           <FormField
             control={form.control}
@@ -525,81 +567,101 @@ const AddTool = () => {
               </FormItem>
             )}
           />
-          
-          <FormField
-            control={form.control}
-            name="categoryId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Category</FormLabel>
-                <FormControl>
-                  <RadioGroup
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    className="grid grid-cols-2 md:grid-cols-3 gap-3"
-                    disabled={loadingCategories}
-                  >
-                    {loadingCategories ? (
-                      <div className="col-span-full text-center text-muted-foreground">
-                        Loading categories...
-                      </div>
-                    ) : (
-                      categories.map((category) => (
-                        <div key={category.id} className="flex items-center space-x-2">
-                          <RadioGroupItem
-                            value={category.id}
-                            id={category.id}
-                            className="peer sr-only"
-                          />
-                          <label
-                            htmlFor={category.id}
-                            className="flex-1 cursor-pointer rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium text-center transition-colors hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground"
-                          >
-                            {category.name}
-                          </label>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField
+              control={form.control}
+              name="categoryId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      className="grid grid-cols-1 gap-2"
+                      disabled={loadingCategories}
+                    >
+                      {loadingCategories ? (
+                        <div className="text-center text-muted-foreground">
+                          Loading categories...
                         </div>
-                      ))
-                    )}
-                  </RadioGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="condition"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Condition</FormLabel>
-                <FormControl>
-                  <RadioGroup
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    className="grid grid-cols-2 md:grid-cols-5 gap-3"
-                  >
-                    {Object.entries(toolConditionLabels).map(([value, label]) => (
-                      <div key={value} className="flex items-center space-x-2">
-                        <RadioGroupItem
-                          value={value}
-                          id={value}
-                          className="peer sr-only"
-                        />
-                        <label
-                          htmlFor={value}
-                          className="flex-1 cursor-pointer rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium text-center transition-colors hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground"
-                        >
-                          {label}
-                        </label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                      ) : (
+                        categories.map((category) => (
+                          <div key={category.id} className="flex items-center space-x-2">
+                            <RadioGroupItem
+                              value={category.id}
+                              id={category.id}
+                              className="peer sr-only"
+                            />
+                            <label
+                              htmlFor={category.id}
+                              className="flex-1 cursor-pointer rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground"
+                            >
+                              {category.name}
+                            </label>
+                          </div>
+                        ))
+                      )}
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="space-y-6">
+              <FormField
+                control={form.control}
+                name="condition"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Condition</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select condition" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.entries(toolConditionLabels).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="powerSource"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Power Source (Optional)</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select power source" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.entries(toolPowerSourceLabels).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
           
           {/* Advanced Group Visibility Settings */}
           {groups.length > 0 && (
