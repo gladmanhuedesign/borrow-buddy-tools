@@ -75,7 +75,7 @@ export const ActiveLendingList = () => {
           )
         `)
         .in('tool_id', toolIds)
-        .in('status', ['approved', 'picked_up', 'return_pending']);
+        .in('status', ['approved', 'picked_up', 'return_pending', 'overdue']);
       
       if (error) throw error;
       return data || [];

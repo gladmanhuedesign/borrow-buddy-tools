@@ -62,7 +62,7 @@ export const ActiveBorrowingList = () => {
           )
         `)
         .eq('requester_id', currentUser.id)
-        .in('status', ['approved', 'picked_up', 'return_pending']);
+        .in('status', ['approved', 'picked_up', 'return_pending', 'overdue']);
       
       if (error) throw error;
       return data || [];
