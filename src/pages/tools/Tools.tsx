@@ -163,13 +163,17 @@ const Tools = () => {
                     {tool.description || "No description provided"}
                   </CardDescription>
                   {(tool.brand || tool.power_source) && (
-                    <div className="flex gap-2 mt-2 text-xs text-muted-foreground">
-                      {tool.brand && <span className="font-medium">{tool.brand}</span>}
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {tool.brand && (
+                        <Badge variant="secondary" className="text-sm font-semibold">
+                          {tool.brand}
+                        </Badge>
+                      )}
                       {tool.power_source && (
-                        <span className="flex items-center gap-1">
-                          <Zap className="h-3 w-3" />
+                        <Badge variant="outline" className="text-sm flex items-center gap-1.5">
+                          <Zap className="h-3.5 w-3.5" />
                           {toolPowerSourceLabels[tool.power_source as keyof typeof toolPowerSourceLabels]}
-                        </span>
+                        </Badge>
                       )}
                     </div>
                   )}
