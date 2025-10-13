@@ -416,7 +416,7 @@ const EditTool = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate(`/tools/${tool.id}`)}
+          onClick={() => navigate(-1)}
           className="h-8 w-8 p-0"
         >
           <ArrowLeft className="h-4 w-4" />
