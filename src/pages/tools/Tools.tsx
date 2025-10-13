@@ -102,11 +102,17 @@ const Tools = () => {
             <Link key={tool.id} to={`/tools/${tool.id}`}>
               <Card className="h-full overflow-hidden transition-shadow hover:shadow-md">
                 {tool.image_url && (
-                  <div className="aspect-video w-full overflow-hidden">
+                  <div className="aspect-video w-full overflow-hidden relative">
+                    <img
+                      src={tool.image_url}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover blur-2xl scale-110 opacity-50"
+                      aria-hidden="true"
+                    />
                     <img
                       src={tool.image_url}
                       alt={tool.name}
-                      className="h-full w-full object-contain bg-muted"
+                      className="relative h-full w-full object-contain"
                     />
                   </div>
                 )}

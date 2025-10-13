@@ -301,11 +301,17 @@ const ToolDetail = () => {
         <div>
           {tool.imageUrl && (
             <div className="overflow-hidden rounded-lg border">
-              <div className="aspect-video w-full">
+              <div className="aspect-video w-full relative overflow-hidden">
+                <img
+                  src={tool.imageUrl}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover blur-2xl scale-110 opacity-50"
+                  aria-hidden="true"
+                />
                 <img
                   src={tool.imageUrl}
                   alt={tool.name}
-                  className="h-full w-full object-contain bg-muted"
+                  className="relative h-full w-full object-contain"
                 />
               </div>
             </div>
