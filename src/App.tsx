@@ -23,6 +23,7 @@ import SearchResults from "./pages/SearchResults";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import Help from "./pages/Help";
+import Install from "./pages/Install";
 import { AuthProvider } from "./contexts/AuthContext";
 import RequireAuth from "./components/auth/RequireAuth";
 import Layout from "./components/layout/Layout";
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/install" element={<Install />} />
             {/* Public route for joining a group via invitation */}
             <Route path="/invite/:inviteCode" element={<JoinGroup />} />
             <Route element={<RequireAuth />}>
