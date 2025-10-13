@@ -8,7 +8,7 @@ const Layout = () => {
   const { currentUser } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <TopHeader />
       <main className="container mx-auto pb-20 pt-6 px-4">
         <Outlet />
