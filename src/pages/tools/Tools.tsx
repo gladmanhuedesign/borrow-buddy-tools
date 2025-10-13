@@ -139,7 +139,7 @@ const Tools = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {tools.map((tool) => (
             <Link key={tool.id} to={`/tools/${tool.id}`}>
               <Card className="h-full overflow-hidden transition-shadow hover:shadow-md">
@@ -159,9 +159,6 @@ const Tools = () => {
                       {toolStatusLabels[tool.status as keyof typeof toolStatusLabels] || tool.status}
                     </Badge>
                   </div>
-                  <CardDescription className="line-clamp-2">
-                    {tool.description || "No description provided"}
-                  </CardDescription>
                   {(tool.brand || tool.power_source) && (
                     <div className="flex flex-wrap gap-2 mt-3">
                       {tool.brand && (
