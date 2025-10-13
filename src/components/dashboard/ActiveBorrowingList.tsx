@@ -11,7 +11,7 @@ import { useState } from "react";
 import { format, isPast } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { toolPowerSourceLabels } from "@/config/toolCategories";
-import { Zap } from "lucide-react";
+import { Zap, MessageCircle } from "lucide-react";
 
 const getStatusColor = (status: string, isOverdue: boolean) => {
   if (isOverdue) return "bg-red-100 text-red-800 border-red-200";
@@ -67,7 +67,23 @@ export const ActiveBorrowingList = () => {
         .in('status', ['approved', 'picked_up', 'return_pending', 'overdue']);
       
       if (error) throw error;
-      return data || [];
+      
+      // Fetch unread message counts for each request
+      const requestsWithMessages = await Promise.all((data || []).map(async (request) => {
+        const { count } = await supabase
+          .from('request_messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('request_id', request.id)
+          .eq('is_read', false)
+          .neq('sender_id', currentUser.id);
+        
+        return {
+          ...request,
+          unread_count: count || 0
+        };
+      }));
+      
+      return requestsWithMessages;
     },
     enabled: !!currentUser
   });
@@ -177,6 +193,12 @@ export const ActiveBorrowingList = () => {
                       ) : (
                         <Badge className={getStatusColor(request.status, false)}>
                           {request.status.replace('_', ' ')}
+                        </Badge>
+                      )}
+                      {request.unread_count > 0 && (
+                        <Badge variant="default" className="ml-auto flex items-center gap-1">
+                          <MessageCircle className="h-3 w-3" />
+                          {request.unread_count}
                         </Badge>
                       )}
                     </div>
