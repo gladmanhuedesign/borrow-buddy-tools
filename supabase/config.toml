@@ -2,3 +2,6 @@ project_id = "wpmelbovrxfyrckhwonf"
 
 [functions.analyze-tool-image]
 verify_jwt = true
+
+[functions.batch-analyze-tools]
+verify_jwt = true
