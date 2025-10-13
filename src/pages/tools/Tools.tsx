@@ -100,7 +100,7 @@ const Tools = () => {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {tools.map((tool) => (
             <Link key={tool.id} to={`/tools/${tool.id}`}>
-              <Card className="h-full overflow-hidden transition-shadow hover:shadow-md">
+              <Card className="h-full overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                 {tool.image_url && (
                   <div className="aspect-video w-full overflow-hidden relative">
                     <img
