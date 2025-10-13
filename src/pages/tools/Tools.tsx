@@ -130,7 +130,7 @@ const Tools = () => {
                   {(tool.brand || tool.power_source) && (
                     <div className="flex flex-wrap gap-2 mt-3">
                       {tool.brand && (
-                        <Badge variant="secondary" className="text-sm font-semibold">
+                        <Badge variant="outline" className="text-xs font-normal bg-gray-700 text-gray-100 border-gray-600">
                           {tool.brand}
                         </Badge>
                       )}
