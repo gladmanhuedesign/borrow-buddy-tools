@@ -334,7 +334,11 @@ const ToolDetail = () => {
             <CardContent className="space-y-4">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Status</span>
-                <Badge variant={tool.status === "available" ? "outline" : "secondary"}>
+                <Badge variant={
+                  tool.status === "available" ? "outline" : 
+                  tool.status === "unavailable" ? "destructive" : 
+                  "secondary"
+                }>
                   {toolStatusLabels[tool.status as keyof typeof toolStatusLabels] || tool.status}
                 </Badge>
               </div>
