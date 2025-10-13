@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "@/components/ui/use-toast";
-import { ArrowLeft, Upload, Loader2, ChevronDown, ChevronRight, Camera, Sparkles, Images } from "lucide-react";
+import { ArrowLeft, Upload, Loader2, ChevronDown, ChevronRight, Camera, Sparkles, Images, CheckCircle2 } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -90,6 +90,8 @@ const AddTool = () => {
   const [isBatchMode, setIsBatchMode] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [analyzingProgress, setAnalyzingProgress] = useState({ current: 0, total: 0 });
+  const [savedToolsCount, setSavedToolsCount] = useState(0);
+  const [totalToolsToProcess, setTotalToolsToProcess] = useState(0);
   
   // Legacy single-image mode states
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -317,6 +319,9 @@ const AddTool = () => {
           await supabase.from('tool_group_visibility').insert(visibilityInserts);
         }
         
+        // Increment saved count
+        setSavedToolsCount(prev => prev + 1);
+        
         // Remove current tool from drafts
         const updatedDrafts = toolDrafts.filter((_, idx) => idx !== currentDraftIndex);
         
@@ -329,6 +334,8 @@ const AddTool = () => {
           setIsBatchMode(false);
           setToolDrafts([]);
           setCurrentDraftIndex(0);
+          setSavedToolsCount(0);
+          setTotalToolsToProcess(0);
           navigate('/tools');
         } else {
           // Move to next tool
@@ -618,6 +625,8 @@ const AddTool = () => {
     }
     
     setAnalyzingProgress({ current: 0, total: 0 });
+    setTotalToolsToProcess(files.length);
+    setSavedToolsCount(0);
     
     toast({
       title: "Batch analysis complete!",
@@ -668,6 +677,8 @@ const AddTool = () => {
     if (updatedDrafts.length === 0) {
       setIsBatchMode(false);
       setCurrentDraftIndex(0);
+      setSavedToolsCount(0);
+      setTotalToolsToProcess(0);
       toast({
         title: "Batch mode cancelled",
       });
@@ -805,33 +816,20 @@ const AddTool = () => {
             </div>
           </Card>
 
-          {/* Progress Banner for Batch Mode */}
+          {/* Compact Progress Banner for Batch Mode */}
           {isBatchMode && toolDrafts.length > 0 && (
-            <Card className="p-4 bg-primary/5 border-primary/20">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="font-semibold">
-                    Reviewing Tool {currentDraftIndex + 1} of {toolDrafts.length}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {toolDrafts[currentDraftIndex].aiSuggestion?.tool_name || 'Unnamed Tool'}
-                  </p>
+            <Card className="p-3 bg-primary/5 border-primary/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">
+                    {savedToolsCount} of {totalToolsToProcess} successfully uploaded and reviewed
+                  </span>
                 </div>
-                <Badge variant="outline">
+                <Badge variant="outline" className="text-xs">
                   {toolDrafts.length} remaining
                 </Badge>
               </div>
-              
-              {/* Image Preview */}
-              {toolDrafts[currentDraftIndex]?.imagePreview && (
-                <div className="relative aspect-video overflow-hidden rounded-lg border bg-muted">
-                  <img
-                    src={toolDrafts[currentDraftIndex].imagePreview}
-                    alt="Current tool preview"
-                    className="h-full w-full object-contain"
-                  />
-                </div>
-              )}
             </Card>
           )}
 
