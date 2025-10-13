@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,18 +12,36 @@ serve(async (req) => {
   }
 
   try {
-    const { image } = await req.json();
+    // Input validation schema
+    const requestSchema = z.object({
+      image: z.string()
+        .min(1, "Image required")
+        .max(10 * 1024 * 1024, "Image too large (max 10MB base64)")
+        .refine(
+          (val) => val.startsWith('data:image/') || val.startsWith('http://') || val.startsWith('https://'),
+          "Must be a valid base64 image or image URL"
+        )
+    });
+
+    const body = await req.json();
+    const validationResult = requestSchema.safeParse(body);
+
+    if (!validationResult.success) {
+      console.error('Validation failed:', validationResult.error.issues);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid input', 
+          details: validationResult.error.issues.map(i => i.message).join(', ')
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { image } = validationResult.data;
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
-    }
-
-    if (!image) {
-      return new Response(
-        JSON.stringify({ error: 'No image provided' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
     }
 
     console.log('Analyzing tool image with Lovable AI...');
