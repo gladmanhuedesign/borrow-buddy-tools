@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -77,6 +77,7 @@ const AddTool = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const toolNameRef = useRef<HTMLInputElement>(null);
   const [groups, setGroups] = useState<Group[]>([]);
   const [categories, setCategories] = useState<ToolCategory[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
@@ -342,8 +343,10 @@ const AddTool = () => {
           setToolDrafts(updatedDrafts);
           populateFormFromDraft(updatedDrafts[0]);
           
-          // Scroll to top of form
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          // Scroll to tool name field
+          setTimeout(() => {
+            toolNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 100);
           
           toast({
             title: "Tool saved!",
@@ -855,7 +858,7 @@ const AddTool = () => {
               <FormItem>
                 <FormLabel>Tool Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter tool name" {...field} />
+                  <Input ref={toolNameRef} placeholder="Enter tool name" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
