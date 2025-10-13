@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { format, isPast } from "date-fns";
+import { useNavigate } from "react-router-dom";
 import { toolPowerSourceLabels } from "@/config/toolCategories";
 import { Zap } from "lucide-react";
 
@@ -34,6 +35,7 @@ const getAvatarColor = (name: string) => {
 export const ActiveBorrowingList = () => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   const { data: borrowedTools = [], refetch } = useQuery({
@@ -153,7 +155,11 @@ export const ActiveBorrowingList = () => {
           const tool = request.tools;
           
           return (
-            <div key={request.id} className="p-4 border rounded-lg hover:bg-accent/50 transition-colors duration-200">
+            <div 
+              key={request.id} 
+              onClick={() => navigate(`/tools/${tool.id}`)}
+              className="p-4 border rounded-lg hover:bg-accent/50 transition-colors duration-200 cursor-pointer"
+            >
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
                   <Avatar className="h-12 w-12 flex-shrink-0">
@@ -195,7 +201,10 @@ export const ActiveBorrowingList = () => {
                   {request.status === 'approved' && (
                     <Button
                       size="sm"
-                      onClick={() => handleConfirmPickup(request.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleConfirmPickup(request.id);
+                      }}
                       disabled={processingId === request.id}
                       className="hover:scale-105 transition-transform duration-200"
                     >
@@ -206,7 +215,10 @@ export const ActiveBorrowingList = () => {
                   {request.status === 'picked_up' && (
                     <Button
                       size="sm"
-                      onClick={() => handleInitiateReturn(request.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleInitiateReturn(request.id);
+                      }}
                       disabled={processingId === request.id}
                       className="hover:scale-105 transition-transform duration-200"
                     >

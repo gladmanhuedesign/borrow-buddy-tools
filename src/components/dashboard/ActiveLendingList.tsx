@@ -138,7 +138,11 @@ export const ActiveLendingList = () => {
           const tool = request.tools;
           
           return (
-            <div key={request.id} className="p-4 border rounded-lg hover:bg-accent/50 transition-colors duration-200">
+            <div 
+              key={request.id} 
+              onClick={() => navigate(`/tools/${tool.id}`)}
+              className="p-4 border rounded-lg hover:bg-accent/50 transition-colors duration-200 cursor-pointer"
+            >
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
                   <Avatar className="h-12 w-12 flex-shrink-0">
@@ -180,7 +184,10 @@ export const ActiveLendingList = () => {
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => navigate(`/tools/${tool.id}`)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/tools/${tool.id}`);
+                    }}
                     className="hover:scale-105 transition-transform duration-200"
                   >
                     View History
@@ -189,7 +196,10 @@ export const ActiveLendingList = () => {
                   {request.status === 'return_pending' && (
                     <Button
                       size="sm"
-                      onClick={() => handleConfirmReturn(request.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleConfirmReturn(request.id);
+                      }}
                       disabled={processingId === request.id}
                       className="hover:scale-105 transition-transform duration-200"
                     >
