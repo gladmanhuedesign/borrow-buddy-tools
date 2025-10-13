@@ -13,7 +13,7 @@ const Index = () => {
         <div className="container flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Wrench className="h-6 w-6" />
-            <span className="text-xl font-bold">Tool Share</span>
+            <span className="text-xl font-bold">Borrow Buddy</span>
           </div>
           <div className="space-x-2">
             {!isAuthenticated ? (
@@ -101,7 +101,7 @@ const Index = () => {
 
       <footer className="w-full py-6 px-4 border-t mt-auto">
         <div className="container mx-auto text-center text-muted-foreground">
-          <p>© 2025 Tool Share. All rights reserved.</p>
+          <p>© 2025 Borrow Buddy. All rights reserved.</p>
         </div>
       </footer>
     </div>

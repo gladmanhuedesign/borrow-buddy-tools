@@ -90,7 +90,7 @@ const Help = () => {
                 Getting Started
               </CardTitle>
               <CardDescription>
-                New to Tool Share? Here's how to get started.
+                New to Borrow Buddy? Here's how to get started.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -170,7 +170,7 @@ const Help = () => {
               Frequently Asked Questions
             </CardTitle>
             <CardDescription>
-              Quick answers to common questions about Tool Share.
+              Quick answers to common questions about Borrow Buddy.
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -27,15 +27,13 @@ const TopHeader = () => {
   if (!isAuthenticated) {
     return (
       <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur">
-        <div className="container flex h-14 items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <Link to="/" className="flex items-center gap-2 font-bold">
-              <Wrench className="h-5 w-5" />
-              <span className="hidden sm:inline">Tool Share</span>
-            </Link>
-          </div>
+        <div className="container flex h-14 items-center justify-between px-4 gap-2">
+          <Link to="/" className="flex items-center gap-2 font-bold flex-shrink-0">
+            <Wrench className="h-5 w-5" />
+            <span>Borrow Buddy</span>
+          </Link>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Button variant="ghost" size="sm" asChild>
               <Link to="/login">Sign In</Link>
             </Button>
@@ -55,7 +53,7 @@ const TopHeader = () => {
         <div className="flex items-center gap-6">
           <Link to="/dashboard" className="flex items-center gap-2 font-bold">
             <Wrench className="h-5 w-5" />
-            <span>Tool Share</span>
+            <span>Borrow Buddy</span>
           </Link>
           
           <nav className="hidden md:flex items-center gap-4">
