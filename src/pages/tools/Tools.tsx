@@ -116,8 +116,8 @@ const Tools = () => {
                     />
                   </div>
                 )}
-                <CardHeader>
-                  <div className="flex justify-between">
+                <CardHeader className="space-y-4">
+                  <div className="flex justify-between gap-3">
                     <CardTitle className="line-clamp-1">{tool.name}</CardTitle>
                     <Badge variant={
                       tool.status === "available" ? "outline" : 
@@ -128,7 +128,7 @@ const Tools = () => {
                     </Badge>
                   </div>
                   {(tool.brand || tool.power_source) && (
-                    <div className="flex flex-wrap gap-2 mt-3">
+                    <div className="flex flex-wrap gap-2">
                       {tool.brand && (
                         <Badge variant="outline" className="text-xs font-normal bg-gray-700 text-gray-100 border-gray-600">
                           {tool.brand}
