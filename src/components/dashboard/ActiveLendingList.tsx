@@ -140,7 +140,7 @@ export const ActiveLendingList = () => {
           return (
             <div 
               key={request.id} 
-              onClick={() => navigate(`/tools/${tool.id}`)}
+              onClick={() => navigate(`/requests/${request.id}`)}
               className="p-4 border rounded-lg hover:bg-accent/50 transition-colors duration-200 cursor-pointer"
             >
               <div className="space-y-3">
