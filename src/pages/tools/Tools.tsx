@@ -106,7 +106,7 @@ const Tools = () => {
                     <img
                       src={tool.image_url}
                       alt={tool.name}
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-contain bg-muted"
                     />
                   </div>
                 )}

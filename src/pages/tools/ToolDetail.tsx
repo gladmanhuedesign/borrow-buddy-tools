@@ -305,7 +305,7 @@ const ToolDetail = () => {
                 <img
                   src={tool.imageUrl}
                   alt={tool.name}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-contain bg-muted"
                 />
               </div>
             </div>
