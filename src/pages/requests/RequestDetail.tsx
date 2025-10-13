@@ -130,8 +130,39 @@ const RequestDetail = () => {
           setIsOwner(true);
         }
         
-        // Fetch messages (mock for now - would need separate messages table)
-        setMessages([]);
+        // Fetch messages
+        const { data: messagesData, error: messagesError } = await supabase
+          .from("request_messages")
+          .select(`
+            id,
+            request_id,
+            sender_id,
+            content,
+            created_at,
+            is_read
+          `)
+          .eq("request_id", id)
+          .order("created_at", { ascending: true });
+
+        if (messagesError) {
+          console.error("Error fetching messages:", messagesError);
+        } else if (messagesData) {
+          // Fetch profiles for all senders
+          const senderIds = [...new Set(messagesData.map(m => m.sender_id))];
+          const { data: profilesData } = await supabase
+            .from("profiles")
+            .select("id, display_name")
+            .in("id", senderIds);
+
+          const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+          
+          const messagesWithProfiles = messagesData.map(msg => ({
+            ...msg,
+            profiles: profilesMap.get(msg.sender_id) || null
+          }));
+          
+          setMessages(messagesWithProfiles as Message[]);
+        }
         
         setLoading(false);
       } catch (error) {
@@ -146,6 +177,40 @@ const RequestDetail = () => {
     };
     
     fetchRequestDetails();
+
+    // Subscribe to new messages via real-time
+    const channel = supabase
+      .channel(`request-messages-${id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "request_messages",
+          filter: `request_id=eq.${id}`,
+        },
+        async (payload) => {
+          // Fetch sender profile
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("display_name")
+            .eq("id", payload.new.sender_id)
+            .single();
+
+          setMessages((prev) => [
+            ...prev,
+            {
+              ...payload.new,
+              profiles: profile,
+            } as Message,
+          ]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [id, currentUser, navigate]);
 
   const handleSendMessage = async () => {
@@ -155,20 +220,17 @@ const RequestDetail = () => {
       setSendingMessage(true);
       console.log("Sending message:", messageText);
       
-      // This would be implemented with a messages table in a real app
-      const newMessage: Message = {
-        id: `msg-${Date.now()}`,
-        request_id: request.id,
-        sender_id: currentUser.id,
-        content: messageText,
-        created_at: new Date().toISOString(),
-        is_read: false,
-        profiles: {
-          display_name: currentUser.displayName || "You"
-        }
-      };
-      
-      setMessages([...messages, newMessage]);
+      const { error } = await supabase
+        .from("request_messages")
+        .insert({
+          request_id: request.id,
+          sender_id: currentUser.id,
+          content: messageText.trim(),
+        });
+
+      if (error) throw error;
+
+      // Message will be added via real-time subscription
       setMessageText("");
       
       toast({
