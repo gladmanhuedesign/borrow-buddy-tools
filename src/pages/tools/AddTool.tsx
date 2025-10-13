@@ -721,7 +721,7 @@ const AddTool = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/tools')}
           className="h-8 w-8 p-0"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -1209,7 +1209,7 @@ const AddTool = () => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate(-1)}
+                onClick={() => navigate('/tools')}
                 className="flex-1"
               >
                 Cancel
