@@ -49,7 +49,7 @@ const TopHeader = () => {
   // Logged in header
   return (
     <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur">
-      <div className="container flex h-14 items-center justify-between">
+      <div className="w-full flex h-14 items-center justify-between sm:px-4">
         <div className="flex items-center gap-6">
           <Link to="/dashboard" className="flex items-center gap-2 font-bold">
             <Wrench className="h-5 w-5" />
