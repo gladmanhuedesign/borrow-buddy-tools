@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,8 +11,10 @@ import {
 import { SearchInput } from "./SearchInput";
 
 export const MobileSearchDialog = () => {
+  const [open, setOpen] = useState(false);
+
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button variant="ghost" size="icon" className="md:hidden">
           <Search className="h-5 w-5" />
@@ -23,7 +26,7 @@ export const MobileSearchDialog = () => {
           <SheetTitle>Search Tools</SheetTitle>
         </SheetHeader>
         <div className="mt-4">
-          <SearchInput />
+          <SearchInput onNavigate={() => setOpen(false)} />
         </div>
       </SheetContent>
     </Sheet>

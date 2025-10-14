@@ -8,7 +8,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToolSearch } from "@/hooks/useToolSearch";
 import { cn } from "@/lib/utils";
 
-export const SearchInput = () => {
+export const SearchInput = ({ onNavigate }: { onNavigate?: () => void } = {}) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showResults, setShowResults] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -75,6 +75,7 @@ export const SearchInput = () => {
       navigate(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
       setShowResults(false);
       inputRef.current?.blur();
+      onNavigate?.();
     }
   };
 
@@ -82,6 +83,7 @@ export const SearchInput = () => {
     navigate(`/tools/${toolId}`);
     setShowResults(false);
     setSearchTerm("");
+    onNavigate?.();
   };
 
   const handleInputChange = (value: string) => {
