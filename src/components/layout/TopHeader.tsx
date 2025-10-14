@@ -27,7 +27,7 @@ const TopHeader = () => {
   if (!isAuthenticated) {
     return (
       <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur">
-        <div className="w-full flex h-14 items-center justify-between px-2 sm:px-4 gap-1 sm:gap-2">
+        <div className="w-full flex h-14 items-center justify-between sm:px-4 gap-1 sm:gap-2">
           <Link to="/" className="flex items-center gap-1.5 sm:gap-2 font-bold flex-shrink-0 text-sm sm:text-base">
             <Wrench className="h-4 w-4 sm:h-5 sm:w-5" />
             <span className="whitespace-nowrap">Borrow Buddy</span>
