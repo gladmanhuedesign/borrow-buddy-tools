@@ -236,9 +236,6 @@ const SearchResults = () => {
                     <div className="flex-1 min-w-0 space-y-2">
                       <div>
                         <h3 className="font-medium text-sm truncate">{tool.name}</h3>
-                        <p className="text-xs text-muted-foreground line-clamp-2 hidden md:block">
-                          {tool.description}
-                        </p>
                         {(tool.brand || tool.power_source) && (
                           <div className="flex gap-2 mt-1 text-xs text-muted-foreground">
                             {tool.brand && <span className="font-medium">{tool.brand}</span>}
