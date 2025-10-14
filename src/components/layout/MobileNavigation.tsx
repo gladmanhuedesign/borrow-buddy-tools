@@ -84,7 +84,7 @@ const MobileNavigation = () => {
   ];
   
   return (
-    <nav className="fixed bottom-0 left-0 z-40 w-full border-t bg-background md:hidden">
+    <nav className="fixed bottom-0 left-0 z-40 w-full border-t bg-background md:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
       <div className="grid grid-cols-4">
         {navItems.map((item) => (
           <Link

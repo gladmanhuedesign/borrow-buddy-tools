@@ -26,7 +26,7 @@ const TopHeader = () => {
   // Non-logged in header
   if (!isAuthenticated) {
     return (
-      <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur">
+      <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="w-full flex h-14 items-center justify-between sm:px-4 gap-1 sm:gap-2">
           <Link to="/" className="flex items-center gap-1.5 sm:gap-2 font-bold flex-shrink-0 text-sm sm:text-base">
             <Wrench className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -48,7 +48,7 @@ const TopHeader = () => {
 
   // Logged in header
   return (
-    <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur">
+    <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       <div className="w-full flex h-14 items-center justify-between sm:px-4">
         <div className="flex items-center gap-6">
           <Link to="/dashboard" className="flex items-center gap-2 font-bold">
