@@ -54,8 +54,11 @@ export const useToolSearch = (searchTerm: string, enabled: boolean = true) => {
 
       const memberIds = [...new Set(groupMembers?.map(m => m.user_id) || [])];
 
-      // Search tools by name and description first
-      const { data: toolsData, error: toolsError } = await supabase
+      // Split search term into individual words for flexible matching
+      const searchWords = searchTerm.trim().split(/\s+/).filter(word => word.length > 0);
+
+      // Build search query with AND logic for multiple words
+      let toolsQuery = supabase
         .from('tools')
         .select(`
           id, 
@@ -69,8 +72,18 @@ export const useToolSearch = (searchTerm: string, enabled: boolean = true) => {
           power_source,
           tool_categories(name)
         `)
-        .in('owner_id', memberIds)
-        .or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
+        .in('owner_id', memberIds);
+
+      // Apply OR conditions for each word (search across all fields)
+      // Each word must be found in at least one field (OR within word)
+      // All words must be found (AND across words)
+      searchWords.forEach(word => {
+        toolsQuery = toolsQuery.or(
+          `name.ilike.%${word}%,description.ilike.%${word}%,brand.ilike.%${word}%,power_source.ilike.%${word}%`
+        );
+      });
+
+      const { data: toolsData, error: toolsError } = await toolsQuery
         .order('name', { ascending: true });
 
       if (toolsError) {
