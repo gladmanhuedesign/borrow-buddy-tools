@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { Search, Filter, Hammer, Zap } from "lucide-react";
@@ -23,6 +23,12 @@ const SearchResults = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [groupFilter, setGroupFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  // Sync search term with URL parameter changes
+  useEffect(() => {
+    const queryParam = searchParams.get('q') || '';
+    setSearchTerm(queryParam);
+  }, [searchParams]);
 
   const { data: searchResults = [], isLoading } = useToolSearch(
     searchTerm,
