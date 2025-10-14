@@ -2,34 +2,29 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Wrench, Share2, Users } from "lucide-react";
-
 const Index = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
-
-  return (
-    <div className="flex flex-col min-h-screen">
+  const {
+    isAuthenticated
+  } = useAuth();
+  return <div className="flex flex-col min-h-screen">
       <header className="w-full py-6 px-4 bg-background/95 border-b">
         <div className="w-full sm:container flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Wrench className="h-6 w-6" />
-            <span className="text-xl font-bold">Borrow Buddy</span>
+            <span className="font-bold text-base">Borrow Buddy</span>
           </div>
           <div className="space-x-2">
-            {!isAuthenticated ? (
-              <>
+            {!isAuthenticated ? <>
                 <Button variant="outline" onClick={() => navigate("/login")}>
                   Sign In
                 </Button>
                 <Button onClick={() => navigate("/register")}>
                   Sign Up
                 </Button>
-              </>
-            ) : (
-              <Button onClick={() => navigate("/dashboard")}>
+              </> : <Button onClick={() => navigate("/dashboard")}>
                 Dashboard
-              </Button>
-            )}
+              </Button>}
           </div>
         </div>
       </header>
@@ -47,16 +42,9 @@ const Index = () => {
               <Button size="lg" onClick={() => navigate("/register")} className="px-8">
                 Get Started
               </Button>
-              {isAuthenticated && (
-                <Button 
-                  size="lg" 
-                  variant="outline" 
-                  onClick={() => navigate("/dashboard")} 
-                  className="px-8"
-                >
+              {isAuthenticated && <Button size="lg" variant="outline" onClick={() => navigate("/dashboard")} className="px-8">
                   Go to Dashboard
-                </Button>
-              )}
+                </Button>}
             </div>
           </div>
         </section>
@@ -104,8 +92,6 @@ const Index = () => {
           <p>© 2025 Borrow Buddy. All rights reserved.</p>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
