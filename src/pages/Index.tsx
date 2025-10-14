@@ -10,7 +10,7 @@ const Index = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <header className="w-full py-6 px-4 bg-background/95 border-b">
-        <div className="container flex justify-between items-center">
+        <div className="w-full sm:container flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Wrench className="h-6 w-6" />
             <span className="text-xl font-bold">Borrow Buddy</span>
