@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
 import { SearchInput } from "@/components/search/SearchInput";
+import { MobileSearchDialog } from "@/components/search/MobileSearchDialog";
 
 const TopHeader = () => {
   const { currentUser, logout, isAuthenticated } = useAuth();
@@ -126,6 +127,7 @@ const TopHeader = () => {
         
         {/* Mobile header actions */}
         <div className="flex md:hidden items-center gap-2">
+          <MobileSearchDialog />
           <NotificationDropdown />
           
           <DropdownMenu>
