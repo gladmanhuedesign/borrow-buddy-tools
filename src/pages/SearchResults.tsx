@@ -227,7 +227,7 @@ const SearchResults = () => {
                   onClick={() => navigate(`/tools/${tool.id}`)}
                 >
                   <div className="flex items-start space-x-3">
-                    <Avatar className="h-12 w-12">
+                    <Avatar className="h-12 w-12 flex-shrink-0">
                       <AvatarImage src={tool.image_url || undefined} alt={tool.name} />
                       <AvatarFallback>
                         <Hammer className="h-6 w-6" />
@@ -236,7 +236,7 @@ const SearchResults = () => {
                     <div className="flex-1 min-w-0 space-y-2">
                       <div>
                         <h3 className="font-medium text-sm truncate">{tool.name}</h3>
-                        <p className="text-xs text-muted-foreground truncate">
+                        <p className="text-xs text-muted-foreground line-clamp-2 hidden md:block">
                           {tool.description}
                         </p>
                         {(tool.brand || tool.power_source) && (
