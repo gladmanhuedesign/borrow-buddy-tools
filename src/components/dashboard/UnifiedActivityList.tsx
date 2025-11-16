@@ -395,12 +395,13 @@ export const UnifiedActivityList = () => {
                     </div>
                   )}
                   
-                  {/* Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  {/* Vertical Gradient Overlay with Blur */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 h-2/3 backdrop-blur-sm bg-gradient-to-t from-black/40 to-transparent" />
                   
                   {/* Type Badge */}
                   <div className="absolute top-3 left-3">
-                    <Badge variant={badgeInfo.variant} className="flex items-center gap-1.5">
+                    <Badge variant={badgeInfo.variant} className="flex items-center gap-1.5 backdrop-blur-md bg-background/80">
                       <BadgeIcon className="h-3 w-3" />
                       {badgeInfo.label}
                     </Badge>
@@ -409,13 +410,13 @@ export const UnifiedActivityList = () => {
                   {/* Status Badge - Show overdue OR status, not both */}
                   {activity.isOverdue ? (
                     <div className="absolute top-3 right-3">
-                      <Badge className="bg-destructive text-destructive-foreground">
+                      <Badge className="bg-destructive text-destructive-foreground backdrop-blur-md">
                         Overdue
                       </Badge>
                     </div>
                   ) : activity.status !== 'pending' && (
                     <div className="absolute top-3 right-3">
-                      <Badge className={cn(getStatusColor(activity.status, false))}>
+                      <Badge className={cn(getStatusColor(activity.status, false), "backdrop-blur-md")}>
                         {getStatusLabel(activity.status)}
                       </Badge>
                     </div>
@@ -424,34 +425,34 @@ export const UnifiedActivityList = () => {
                   {/* Messages Indicator */}
                   {activity.unread_messages > 0 && (
                     <div className="absolute top-12 right-3">
-                      <Badge className="bg-primary text-primary-foreground">
+                      <Badge className="bg-primary text-primary-foreground backdrop-blur-md">
                         <MessageCircle className="h-3 w-3 mr-1" />
                         {activity.unread_messages}
                       </Badge>
                     </div>
                   )}
-                </div>
 
-                {/* Content Section */}
-                <div className="p-5 space-y-3 bg-card">
-                  <div>
-                    <h3 className="font-semibold text-base truncate">{activity.tool_name}</h3>
-                    <p className="text-sm text-muted-foreground">
+                  {/* Tool Name and Party Info - Overlaid on image */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
+                    <h3 className="font-bold text-lg text-white drop-shadow-lg">{activity.tool_name}</h3>
+                    <p className="text-sm text-white/90 drop-shadow-md">
                       {activity.type === 'borrowing' ? `from ${activity.other_party_name}` : 
                        activity.type === 'lending' ? `to ${activity.other_party_name}` :
                        `by ${activity.other_party_name}`}
                     </p>
+                    
+                    {activity.end_date && (
+                      <div className="flex items-center text-sm text-white/90 drop-shadow-md">
+                        <Clock className="h-3.5 w-3.5 mr-1.5" />
+                        Due: {format(new Date(activity.end_date), "MMM d, yyyy")}
+                      </div>
+                    )}
                   </div>
+                </div>
 
-                  {activity.end_date && (
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Clock className="h-3.5 w-3.5 mr-1.5" />
-                      Due: {format(new Date(activity.end_date), "MMM d, yyyy")}
-                    </div>
-                  )}
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
+                {/* Action Buttons Section */}
+                <div className="p-4 bg-card">
+                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                     {activity.type === 'pending_to_me' && (
                       <>
                         <Button
