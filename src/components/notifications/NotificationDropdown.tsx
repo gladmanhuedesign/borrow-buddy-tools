@@ -61,6 +61,7 @@ export const NotificationDropdown = () => {
                 <NotificationItem
                   key={notification.id}
                   notification={notification}
+                  onClose={() => setIsOpen(false)}
                 />
               ))}
             </div>

@@ -13,9 +13,10 @@ import {
 
 interface NotificationItemProps {
   notification: Notification;
+  onClose?: () => void;
 }
 
-export const NotificationItem = ({ notification }: NotificationItemProps) => {
+export const NotificationItem = ({ notification, onClose }: NotificationItemProps) => {
   const { markAsRead } = useNotifications();
   const navigate = useNavigate();
 
@@ -40,11 +41,18 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
       await markAsRead(notification.id);
     }
 
+    // Close dropdown
+    if (onClose) {
+      onClose();
+    }
+
     // Navigate based on notification type
     switch (notification.type) {
       case 'tool_request':
       case 'request_approved':
       case 'request_denied':
+      case 'message':
+      case 'new_message':
         if (notification.data?.request_id) {
           navigate(`/requests/${notification.data.request_id}`);
         } else {
@@ -52,9 +60,21 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
         }
         break;
       case 'group_invite':
-        navigate('/groups');
+        navigate('/groups/invitations');
+        break;
+      case 'tool_returned':
+      case 'return_pending':
+        if (notification.data?.request_id) {
+          navigate(`/requests/${notification.data.request_id}`);
+        } else {
+          navigate('/requests');
+        }
         break;
       default:
+        // If there's a request_id in data, navigate to it
+        if (notification.data?.request_id) {
+          navigate(`/requests/${notification.data.request_id}`);
+        }
         break;
     }
   };
