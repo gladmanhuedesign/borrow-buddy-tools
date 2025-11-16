@@ -377,10 +377,10 @@ export const UnifiedActivityList = () => {
               <div
                 key={activity.id}
                 onClick={() => navigate(`/requests/${activity.id}`)}
-                className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl border border-border"
+                className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl border border-border h-[320px]"
               >
-                {/* Image Section */}
-                <div className="relative h-48 overflow-hidden bg-muted">
+                {/* Full Height Image Section */}
+                <div className="absolute inset-0 bg-muted">
                   {activity.tool_image ? (
                     <img
                       src={activity.tool_image}
@@ -447,72 +447,75 @@ export const UnifiedActivityList = () => {
                         Due: {format(new Date(activity.end_date), "MMM d, yyyy")}
                       </div>
                     )}
-                  </div>
-                </div>
-
-                {/* Action Buttons Section */}
-                <div className="p-4 bg-card">
-                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                    {activity.type === 'pending_to_me' && (
-                      <>
-                        <Button
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => handleAction(activity.id, 'approve')}
-                          disabled={processingId === activity.id}
-                        >
-                          Approve
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleAction(activity.id, 'deny')}
-                          disabled={processingId === activity.id}
-                        >
-                          Deny
-                        </Button>
-                      </>
-                    )}
-                    {activity.type === 'pending_from_me' && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1"
-                        onClick={() => handleAction(activity.id, 'cancel')}
-                        disabled={processingId === activity.id}
-                      >
-                        Cancel Request
-                      </Button>
-                    )}
-                    {activity.type === 'borrowing' && activity.status === 'approved' && (
-                      <Button
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => handleAction(activity.id, 'confirm_pickup')}
-                        disabled={processingId === activity.id}
-                      >
-                        Confirm Pickup
-                      </Button>
-                    )}
-                    {activity.type === 'borrowing' && activity.status === 'picked_up' && (
-                      <Button
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => handleAction(activity.id, 'initiate_return')}
-                        disabled={processingId === activity.id}
-                      >
-                        Initiate Return
-                      </Button>
-                    )}
-                    {activity.type === 'lending' && activity.status === 'return_pending' && (
-                      <Button
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => handleAction(activity.id, 'confirm_return')}
-                        disabled={processingId === activity.id}
-                      >
-                        Confirm Return
-                      </Button>
+                    
+                    {/* Action Buttons - Only show if there are actions */}
+                    {(activity.type === 'pending_to_me' || activity.type === 'pending_from_me' || 
+                      (activity.type === 'borrowing' && (activity.status === 'approved' || activity.status === 'picked_up')) ||
+                      (activity.type === 'lending' && activity.status === 'return_pending')) && (
+                      <div className="flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
+                        {activity.type === 'pending_to_me' && (
+                          <>
+                            <Button
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => handleAction(activity.id, 'approve')}
+                              disabled={processingId === activity.id}
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="backdrop-blur-md bg-background/80 hover:bg-background"
+                              onClick={() => handleAction(activity.id, 'deny')}
+                              disabled={processingId === activity.id}
+                            >
+                              Deny
+                            </Button>
+                          </>
+                        )}
+                        {activity.type === 'pending_from_me' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 backdrop-blur-md bg-background/80 hover:bg-background"
+                            onClick={() => handleAction(activity.id, 'cancel')}
+                            disabled={processingId === activity.id}
+                          >
+                            Cancel Request
+                          </Button>
+                        )}
+                        {activity.type === 'borrowing' && activity.status === 'approved' && (
+                          <Button
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => handleAction(activity.id, 'confirm_pickup')}
+                            disabled={processingId === activity.id}
+                          >
+                            Confirm Pickup
+                          </Button>
+                        )}
+                        {activity.type === 'borrowing' && activity.status === 'picked_up' && (
+                          <Button
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => handleAction(activity.id, 'initiate_return')}
+                            disabled={processingId === activity.id}
+                          >
+                            Initiate Return
+                          </Button>
+                        )}
+                        {activity.type === 'lending' && activity.status === 'return_pending' && (
+                          <Button
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => handleAction(activity.id, 'confirm_return')}
+                            disabled={processingId === activity.id}
+                          >
+                            Confirm Return
+                          </Button>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
