@@ -9,12 +9,12 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-transparent border-primary text-primary-foreground",
+          "bg-primary/5 border-primary text-primary-foreground",
         secondary:
-          "bg-transparent border-secondary text-secondary-foreground",
+          "bg-secondary/5 border-secondary text-secondary-foreground",
         destructive:
-          "bg-transparent border-destructive text-destructive-foreground",
-        outline: "bg-transparent border-border text-foreground",
+          "bg-destructive/5 border-destructive text-destructive-foreground",
+        outline: "bg-border/5 border-border text-foreground",
       },
     },
     defaultVariants: {
