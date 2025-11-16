@@ -553,31 +553,28 @@ export type Database = {
           updated_at: string
           user_id: string
         }
+        SetofOptions: {
+          from: "*"
+          to: "user_preferences"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       get_user_group_role: {
         Args: { group_id: string; user_id: string }
         Returns: string
       }
-      is_group_admin: {
-        Args: { group_id: string }
-        Returns: boolean
-      }
+      is_group_admin: { Args: { group_id: string }; Returns: boolean }
       is_group_creator: {
         Args: { group_id: string; user_id: string }
         Returns: boolean
       }
-      is_group_member: {
-        Args: { group_id: string }
-        Returns: boolean
-      }
+      is_group_member: { Args: { group_id: string }; Returns: boolean }
       is_group_member_safe: {
         Args: { group_id: string; user_id: string }
         Returns: boolean
       }
-      mark_overdue_requests: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      mark_overdue_requests: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

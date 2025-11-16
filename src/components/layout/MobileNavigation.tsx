@@ -84,16 +84,16 @@ const MobileNavigation = () => {
   ];
   
   return (
-    <nav className="fixed bottom-0 left-0 z-40 w-full border-t bg-background md:hidden pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed bottom-0 left-0 z-40 w-full border-t bg-card/50 backdrop-blur-lg md:hidden pb-[env(safe-area-inset-bottom)]">
       <div className="grid grid-cols-4">
         {navItems.map((item) => (
           <Link
             key={item.href}
             to={item.href}
             className={cn(
-              "flex flex-col items-center justify-center py-2",
+              "flex flex-col items-center justify-center py-3 transition-colors",
               location.pathname === item.href
-                ? "text-primary"
+                ? "text-primary font-medium"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
@@ -101,7 +101,7 @@ const MobileNavigation = () => {
               {item.icon}
               {item.notification}
             </span>
-            <span className="text-xs">{item.label}</span>
+            <span className="text-xs mt-1">{item.label}</span>
           </Link>
         ))}
       </div>
