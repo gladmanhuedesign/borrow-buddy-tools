@@ -43,14 +43,14 @@ const getActivityBadge = (type: ActivityType) => {
   }
 };
 
-const getStatusColor = (status: string, isOverdue: boolean) => {
-  if (isOverdue) return "bg-destructive text-destructive-foreground";
+const getStatusVariant = (status: string, isOverdue: boolean): "default" | "secondary" | "destructive" | "outline" => {
+  if (isOverdue) return "destructive";
   switch (status) {
-    case "pending": return "bg-accent text-accent-foreground";
-    case "approved": return "bg-accent text-accent-foreground";
-    case "picked_up": return "bg-secondary text-secondary-foreground";
-    case "return_pending": return "bg-primary/20 text-primary";
-    default: return "bg-muted text-muted-foreground";
+    case "pending": return "outline";
+    case "approved": return "outline";
+    case "picked_up": return "secondary";
+    case "return_pending": return "default";
+    default: return "outline";
   }
 };
 
@@ -401,7 +401,7 @@ export const UnifiedActivityList = () => {
                   
                   {/* Type Badge */}
                   <div className="absolute top-3 left-3">
-                    <Badge variant={badgeInfo.variant} className="flex items-center gap-1.5 backdrop-blur-md bg-background/80">
+                    <Badge variant={badgeInfo.variant} className="flex items-center gap-1.5">
                       <BadgeIcon className="h-3 w-3" />
                       {badgeInfo.label}
                     </Badge>
@@ -410,13 +410,13 @@ export const UnifiedActivityList = () => {
                   {/* Status Badge - Show overdue OR status, not both */}
                   {activity.isOverdue ? (
                     <div className="absolute top-3 right-3">
-                      <Badge className="bg-destructive text-destructive-foreground backdrop-blur-md">
+                      <Badge variant="destructive">
                         Overdue
                       </Badge>
                     </div>
                   ) : activity.status !== 'pending' && (
                     <div className="absolute top-3 right-3">
-                      <Badge className={cn(getStatusColor(activity.status, false), "backdrop-blur-md")}>
+                      <Badge variant={getStatusVariant(activity.status, false)}>
                         {getStatusLabel(activity.status)}
                       </Badge>
                     </div>
@@ -425,7 +425,7 @@ export const UnifiedActivityList = () => {
                   {/* Messages Indicator */}
                   {activity.unread_messages > 0 && (
                     <div className="absolute top-12 right-3">
-                      <Badge className="bg-primary text-primary-foreground backdrop-blur-md">
+                      <Badge variant="default">
                         <MessageCircle className="h-3 w-3 mr-1" />
                         {activity.unread_messages}
                       </Badge>
