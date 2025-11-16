@@ -380,7 +380,7 @@ export const UnifiedActivityList = () => {
                 className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] border border-border h-[320px]"
               >
                 {/* Full Height Image Section */}
-                <div className="absolute inset-0 bg-muted">
+                <div className="absolute inset-0 bg-background/5">
                   {activity.tool_image ? (
                     <img
                       src={activity.tool_image}
