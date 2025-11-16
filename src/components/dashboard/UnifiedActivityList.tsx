@@ -377,7 +377,7 @@ export const UnifiedActivityList = () => {
               <div
                 key={activity.id}
                 onClick={() => navigate(`/requests/${activity.id}`)}
-                className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-xl border border-border"
+                className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl border border-border"
               >
                 {/* Image Section */}
                 <div className="relative h-48 overflow-hidden bg-muted">
@@ -385,7 +385,7 @@ export const UnifiedActivityList = () => {
                     <img
                       src={activity.tool_image}
                       alt={activity.tool_name}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                      className="w-full h-full object-cover"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
@@ -406,10 +406,16 @@ export const UnifiedActivityList = () => {
                     </Badge>
                   </div>
 
-                  {/* Status Badge */}
-                  {activity.status !== 'pending' && (
+                  {/* Status Badge - Show overdue OR status, not both */}
+                  {activity.isOverdue ? (
                     <div className="absolute top-3 right-3">
-                      <Badge className={cn(getStatusColor(activity.status, activity.isOverdue || false))}>
+                      <Badge className="bg-destructive text-destructive-foreground">
+                        Overdue
+                      </Badge>
+                    </div>
+                  ) : activity.status !== 'pending' && (
+                    <div className="absolute top-3 right-3">
+                      <Badge className={cn(getStatusColor(activity.status, false))}>
                         {getStatusLabel(activity.status)}
                       </Badge>
                     </div>
@@ -441,7 +447,6 @@ export const UnifiedActivityList = () => {
                     <div className="flex items-center text-sm text-muted-foreground">
                       <Clock className="h-3.5 w-3.5 mr-1.5" />
                       Due: {format(new Date(activity.end_date), "MMM d, yyyy")}
-                      {activity.isOverdue && <span className="text-destructive ml-1">(Overdue)</span>}
                     </div>
                   )}
 
