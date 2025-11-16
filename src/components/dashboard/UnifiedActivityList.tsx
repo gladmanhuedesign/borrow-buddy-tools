@@ -395,9 +395,9 @@ export const UnifiedActivityList = () => {
                     </div>
                   )}
                   
-                  {/* Vertical Gradient Overlay with Blur */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 h-2/3 backdrop-blur-sm bg-gradient-to-t from-black/40 to-transparent" />
+                  {/* Smooth Vertical Gradient Overlay with Blur */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 via-40% to-transparent" />
+                  <div className="absolute inset-0 backdrop-blur-[2px] bg-gradient-to-t from-black/30 via-transparent via-60% to-transparent" />
                   
                   {/* Type Badge */}
                   <div className="absolute top-3 left-3">
@@ -433,16 +433,16 @@ export const UnifiedActivityList = () => {
                   )}
 
                   {/* Tool Name and Party Info - Overlaid on image */}
-                  <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
-                    <h3 className="font-bold text-lg text-white drop-shadow-lg">{activity.tool_name}</h3>
-                    <p className="text-sm text-white/90 drop-shadow-md">
+                  <div className="absolute inset-x-0 bottom-0 p-5 space-y-2">
+                    <h3 className="font-bold text-lg text-white drop-shadow-lg leading-tight">{activity.tool_name}</h3>
+                    <p className="text-sm text-white/95 drop-shadow-md">
                       {activity.type === 'borrowing' ? `from ${activity.other_party_name}` : 
                        activity.type === 'lending' ? `to ${activity.other_party_name}` :
                        `by ${activity.other_party_name}`}
                     </p>
                     
                     {activity.end_date && (
-                      <div className="flex items-center text-sm text-white/90 drop-shadow-md">
+                      <div className="flex items-center text-sm text-white/95 drop-shadow-md">
                         <Clock className="h-3.5 w-3.5 mr-1.5" />
                         Due: {format(new Date(activity.end_date), "MMM d, yyyy")}
                       </div>
