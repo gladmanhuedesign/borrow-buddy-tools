@@ -7,9 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { ActiveBorrowingList } from "@/components/dashboard/ActiveBorrowingList";
-import { ActiveLendingList } from "@/components/dashboard/ActiveLendingList";
-import { PendingActions } from "@/components/dashboard/PendingActions";
+import { UnifiedActivityList } from "@/components/dashboard/UnifiedActivityList";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { NewToolsFeed } from "@/components/dashboard/NewToolsFeed";
 
@@ -218,18 +216,14 @@ const Dashboard = () => {
       </div>
 
       <div className="space-y-6">
-        {/* Three column layout for main sections */}
-        <div className="grid gap-6 md:grid-cols-3">
-          <ActiveBorrowingList />
-          <ActiveLendingList />
-          <PendingActions />
+        {/* Unified Activity List */}
+        <UnifiedActivityList />
+        
+        {/* New Tools Feed and Quick Actions */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <NewToolsFeed />
+          <QuickActions />
         </div>
-        
-        {/* New Tools Feed Section */}
-        <NewToolsFeed />
-        
-        {/* Quick Actions Section */}
-        <QuickActions />
 
         {/* Pending Invitations Section */}
         {invitations.length > 0 && (
