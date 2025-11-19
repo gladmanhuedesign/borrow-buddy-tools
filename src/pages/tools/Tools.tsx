@@ -100,7 +100,7 @@ const Tools = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {tools.map((tool) => (
             <Link key={tool.id} to={`/tools/${tool.id}`}>
-              <div className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] border border-border h-[320px]">
+              <div className="group relative h-[320px] rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] bg-surface-2">
                 {/* Full Height Image Section */}
                 <div className="absolute inset-0 bg-background/5">
                   {tool.image_url ? (
