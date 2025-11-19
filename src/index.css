@@ -24,8 +24,13 @@
     --action-foreground: 210 40% 98%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --border: 214.3 31.8% 95%;
+    --input: 214.3 31.8% 95%;
+    
+    /* Surface elevation tokens for depth without borders */
+    --surface-1: 0 0% 99%;
+    --surface-2: 0 0% 98%;
+    --surface-3: 0 0% 97%;
     --ring: 222.2 84% 4.9%;
     --radius: 1.5rem;
     --sidebar-background: 0 0% 98%;
@@ -78,9 +83,14 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    /* Borders: #333333 */
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
+    /* Borders: Very subtle #1f1f1f */
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    
+    /* Surface elevation tokens for depth without borders */
+    --surface-1: 0 0% 7%;
+    --surface-2: 0 0% 9%;
+    --surface-3: 0 0% 11%;
     
     /* Focus ring: Cyan-blue */
     --ring: 199 89% 48%;
