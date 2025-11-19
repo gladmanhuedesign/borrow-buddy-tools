@@ -9,6 +9,8 @@ import {
   HelpCircle,
   LogOut
 } from "lucide-react";
+import { UserAvatar } from "@/components/ui/user-avatar";
+import { useProfile } from "@/hooks/useProfile";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +25,7 @@ import { MobileSearchDialog } from "@/components/search/MobileSearchDialog";
 
 const TopHeader = () => {
   const { currentUser, logout, isAuthenticated } = useAuth();
+  const { profile } = useProfile();
 
   // Non-logged in header
   if (!isAuthenticated) {
@@ -82,8 +85,12 @@ const TopHeader = () => {
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
-                <User className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <UserAvatar
+                  displayName={currentUser?.displayName || "User"}
+                  avatarUrl={profile?.avatar_url}
+                  size="md"
+                />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-background">
