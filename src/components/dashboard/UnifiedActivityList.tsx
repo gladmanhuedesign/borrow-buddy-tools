@@ -395,9 +395,8 @@ export const UnifiedActivityList = () => {
                     </div>
                   )}
                   
-                  {/* Smooth Vertical Gradient Overlay with Blur */}
+                  {/* Smooth Vertical Gradient Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 via-40% to-transparent" />
-                  <div className="absolute inset-0 backdrop-blur-[2px] bg-gradient-to-t from-black/30 via-transparent via-60% to-transparent" />
                   
                   {/* Type Badge */}
                   <div className="absolute top-3 left-3">
