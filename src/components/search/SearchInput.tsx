@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { Search, Hammer } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToolSearch } from "@/hooks/useToolSearch";
 import { cn } from "@/lib/utils";
 
@@ -132,12 +131,15 @@ export const SearchInput = ({ onNavigate }: { onNavigate?: () => void } = {}) =>
                     selectedIndex === index && "bg-accent"
                   )}
                 >
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={tool.image_url || undefined} alt={tool.name} />
-                    <AvatarFallback>
-                      <Hammer className="h-4 w-4" />
-                    </AvatarFallback>
-                  </Avatar>
+                  <div className="h-12 w-12 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                    {tool.image_url ? (
+                      <img src={tool.image_url} alt={tool.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Hammer className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-sm truncate">{tool.name}</div>
                     <div className="text-xs text-muted-foreground truncate">
