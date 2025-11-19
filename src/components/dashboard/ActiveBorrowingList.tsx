@@ -257,7 +257,7 @@ export const ActiveBorrowingList = () => {
                     </Button>
                   )}
                   
-                  {request.status === 'picked_up' && (
+                  {(request.status === 'picked_up' || request.status === 'overdue') && (
                     <Button
                       size="sm"
                       onClick={(e) => {

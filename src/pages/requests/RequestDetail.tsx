@@ -426,6 +426,7 @@ const RequestDetail = () => {
             </Button>
           );
         case "picked_up":
+        case "overdue":
           return (
             <Button 
               onClick={() => handleStatusUpdate("return_pending")}
