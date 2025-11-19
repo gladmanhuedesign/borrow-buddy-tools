@@ -377,7 +377,7 @@ export const UnifiedActivityList = () => {
               <div
                 key={activity.id}
                 onClick={() => navigate(`/requests/${activity.id}`)}
-                className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] bg-surface-2 h-[320px]"
+                className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] h-[320px]"
               >
                 {/* Full Height Image Section */}
                 <div className="absolute inset-0 bg-background/5">

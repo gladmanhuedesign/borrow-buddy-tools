@@ -215,7 +215,7 @@ const SearchResults = () => {
               <div
                 key={tool.id}
                 onClick={() => navigate(`/tools/${tool.id}`)}
-                className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] bg-surface-2 h-[320px]"
+                className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] h-[320px]"
               >
                 {/* Full Height Image Section */}
                 <div className="absolute inset-0 bg-background/5">
