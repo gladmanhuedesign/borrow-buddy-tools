@@ -10,6 +10,7 @@ type SearchResult = {
   category_name: string | null;
   group_name: string;
   owner_name: string;
+  owner_avatar_url: string | null;
   status: string;
   image_url: string | null;
   owner_id: string;
@@ -147,7 +148,7 @@ export const useToolSearch = (searchTerm: string, enabled: boolean = true) => {
       const [ownersResponse, categoriesResponse, groupsResponse] = await Promise.all([
         supabase
           .from('profiles')
-          .select('id, display_name')
+          .select('id, display_name, avatar_url')
           .in('id', ownerIds),
         categoryIds2.length > 0 ? supabase
           .from('tool_categories')
@@ -161,7 +162,7 @@ export const useToolSearch = (searchTerm: string, enabled: boolean = true) => {
 
       // Create lookup maps
       const ownersMap = new Map(
-        (ownersResponse.data || []).map(owner => [owner.id, owner.display_name])
+        (ownersResponse.data || []).map(owner => [owner.id, { name: owner.display_name, avatar: owner.avatar_url }])
       );
       const categoriesMap = new Map(
         (categoriesResponse.data || []).map(category => [category.id, category.name])
@@ -179,20 +180,24 @@ export const useToolSearch = (searchTerm: string, enabled: boolean = true) => {
       });
 
       // Combine the data
-      return uniqueTools.map(tool => ({
-        id: tool.id,
-        name: tool.name,
-        description: tool.description || '',
-        category_name: tool.tool_categories?.name || categoriesMap.get(tool.category_id || '') || null,
-        group_name: groupsMap.get(userGroupMap.get(tool.owner_id) || '') || 'Unknown Group',
-        owner_name: ownersMap.get(tool.owner_id) || 'Unknown User',
-        status: tool.status,
-        image_url: tool.image_url,
-        owner_id: tool.owner_id,
-        group_id: userGroupMap.get(tool.owner_id) || '',
-        brand: tool.brand || null,
-        power_source: tool.power_source || null
-      }));
+      return uniqueTools.map(tool => {
+        const ownerData = ownersMap.get(tool.owner_id);
+        return {
+          id: tool.id,
+          name: tool.name,
+          description: tool.description || '',
+          category_name: tool.tool_categories?.name || categoriesMap.get(tool.category_id || '') || null,
+          group_name: groupsMap.get(userGroupMap.get(tool.owner_id) || '') || 'Unknown Group',
+          owner_name: ownerData?.name || 'Unknown User',
+          owner_avatar_url: ownerData?.avatar || null,
+          status: tool.status,
+          image_url: tool.image_url,
+          owner_id: tool.owner_id,
+          group_id: userGroupMap.get(tool.owner_id) || '',
+          brand: tool.brand || null,
+          power_source: tool.power_source || null
+        };
+      });
     },
     enabled: enabled && !!currentUser?.id && !!searchTerm.trim()
   });
