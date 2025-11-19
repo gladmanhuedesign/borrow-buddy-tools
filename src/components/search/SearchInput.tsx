@@ -127,11 +127,11 @@ export const SearchInput = ({ onNavigate }: { onNavigate?: () => void } = {}) =>
                   key={tool.id}
                   onClick={() => handleResultClick(tool.id)}
                   className={cn(
-                    "w-full flex items-center gap-3 p-3 text-left hover:bg-accent transition-colors",
-                    selectedIndex === index && "bg-accent"
+                    "w-full flex items-center gap-3 p-3 text-left hover:bg-primary/8 transition-colors",
+                    selectedIndex === index && "bg-primary/8"
                   )}
                 >
-                  <div className="h-12 w-12 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                  <div className="h-12 w-12 rounded-md overflow-hidden bg-muted flex-shrink-0">
                     {tool.image_url ? (
                       <img src={tool.image_url} alt={tool.name} className="w-full h-full object-cover" />
                     ) : (
