@@ -6,7 +6,6 @@ import { Search, Filter, Hammer, Zap } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToolSearch } from "@/hooks/useToolSearch";
@@ -203,75 +202,84 @@ const SearchResults = () => {
         )}
 
         {isLoading ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {[1, 2, 3, 4, 5, 6].map(i => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="h-12 w-12 bg-gray-200 rounded-full"></div>
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <div key={i} className="rounded-2xl overflow-hidden animate-pulse h-[320px]">
+                <div className="h-full w-full bg-muted"></div>
+              </div>
             ))}
           </div>
         ) : filteredResults.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredResults.map((tool) => (
-              <Card key={tool.id} className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardContent 
-                  className="p-4"
-                  onClick={() => navigate(`/tools/${tool.id}`)}
-                >
-                  <div className="flex items-start space-x-3">
-                    <Avatar className="h-12 w-12 flex-shrink-0">
-                      <AvatarImage src={tool.image_url || undefined} alt={tool.name} />
-                      <AvatarFallback>
-                        <Hammer className="h-6 w-6" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0 space-y-2">
-                      <div>
-                        <h3 className="font-medium text-sm truncate">{tool.name}</h3>
-                        {(tool.brand || tool.power_source) && (
-                          <div className="flex gap-2 mt-1 text-xs text-muted-foreground">
-                            {tool.brand && <span className="font-medium">{tool.brand}</span>}
-                            {tool.power_source && (
-                              <span className="flex items-center gap-1">
-                                <Zap className="h-3 w-3" />
-                                {toolPowerSourceLabels[tool.power_source as keyof typeof toolPowerSourceLabels]}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between text-xs">
-                        <div className="space-y-1">
-                          <div className="text-muted-foreground">
-                            {tool.group_name}
-                          </div>
-                          <div className="text-muted-foreground">
-                            by {tool.owner_name}
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-end gap-1">
-                          {tool.category_name && (
-                            <Badge variant="outline" className="text-xs">
-                              {tool.category_name}
-                            </Badge>
+              <div
+                key={tool.id}
+                onClick={() => navigate(`/tools/${tool.id}`)}
+                className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] border border-border h-[320px]"
+              >
+                {/* Full Height Image Section */}
+                <div className="absolute inset-0 bg-background/5">
+                  {tool.image_url ? (
+                    <img
+                      src={tool.image_url}
+                      alt={tool.name}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
+                      <Hammer className="h-16 w-16 text-primary/40" />
+                    </div>
+                  )}
+                  
+                  {/* Smooth Vertical Gradient Overlay with Blur */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 via-40% to-transparent" />
+                  <div className="absolute inset-0 backdrop-blur-[2px] bg-gradient-to-t from-black/30 via-transparent via-60% to-transparent" />
+                  
+                  {/* Category Badge */}
+                  {tool.category_name && (
+                    <div className="absolute top-3 left-3">
+                      <Badge variant="outline">
+                        {tool.category_name}
+                      </Badge>
+                    </div>
+                  )}
+
+                  {/* Status Badge */}
+                  <div className="absolute top-3 right-3">
+                    <Badge variant={
+                      tool.status === 'available' ? 'secondary' :
+                      tool.status === 'borrowed' ? 'default' :
+                      'outline'
+                    }>
+                      {tool.status}
+                    </Badge>
+                  </div>
+
+                  {/* Tool Info - Overlaid on image */}
+                  <div className="absolute inset-x-0 bottom-0 p-5 space-y-2">
+                    <h3 className="font-bold text-lg text-white drop-shadow-lg leading-tight">{tool.name}</h3>
+                    <div className="space-y-1">
+                      {(tool.brand || tool.power_source) && (
+                        <div className="flex gap-2 text-sm text-white/95 drop-shadow-md">
+                          {tool.brand && <span className="font-medium">{tool.brand}</span>}
+                          {tool.power_source && (
+                            <span className="flex items-center gap-1">
+                              <Zap className="h-3.5 w-3.5" />
+                              {toolPowerSourceLabels[tool.power_source as keyof typeof toolPowerSourceLabels]}
+                            </span>
                           )}
-                          <Badge className={cn("text-xs", getStatusColor(tool.status))}>
-                            {tool.status}
-                          </Badge>
                         </div>
-                      </div>
+                      )}
+                      <p className="text-sm text-white/90 drop-shadow-md">
+                        {tool.group_name}
+                      </p>
+                      <p className="text-xs text-white/80 drop-shadow-md">
+                        by {tool.owner_name}
+                      </p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         ) : searchTerm ? (
