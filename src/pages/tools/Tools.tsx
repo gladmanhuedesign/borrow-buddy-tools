@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Plus, Zap } from "lucide-react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Zap, Hammer } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toolStatusLabels, toolPowerSourceLabels } from "@/config/toolCategories";
 import { supabase } from "@/integrations/supabase/client";
@@ -97,53 +97,58 @@ const Tools = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {tools.map((tool) => (
             <Link key={tool.id} to={`/tools/${tool.id}`}>
-              <Card className="h-full overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                {tool.image_url && (
-                  <div className="aspect-video w-full overflow-hidden relative">
-                    <img
-                      src={tool.image_url}
-                      alt=""
-                      className="absolute inset-0 h-full w-full object-cover blur-2xl scale-110 opacity-50"
-                      aria-hidden="true"
-                    />
+              <div className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] border border-border h-[320px]">
+                {/* Full Height Image Section */}
+                <div className="absolute inset-0 bg-background/5">
+                  {tool.image_url ? (
                     <img
                       src={tool.image_url}
                       alt={tool.name}
-                      className="relative h-full w-full object-contain"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
-                  </div>
-                )}
-                <CardHeader className="space-y-4">
-                  <div className="flex justify-between gap-3">
-                    <CardTitle className="line-clamp-1">{tool.name}</CardTitle>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
+                      <Hammer className="h-16 w-16 text-primary/40" />
+                    </div>
+                  )}
+                  
+                  {/* Smooth Vertical Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 via-40% to-transparent" />
+                  
+                  {/* Status Badge */}
+                  <div className="absolute top-3 right-3">
                     <Badge variant={
-                      tool.status === "available" ? "outline" : 
-                      tool.status === "unavailable" ? "destructive" : 
-                      "secondary"
+                      tool.status === 'available' ? 'secondary' :
+                      tool.status === 'borrowed' ? 'default' :
+                      'destructive'
                     }>
                       {toolStatusLabels[tool.status as keyof typeof toolStatusLabels] || tool.status}
                     </Badge>
                   </div>
-                  {(tool.brand || tool.power_source) && (
-                    <div className="flex flex-wrap gap-2">
-                      {tool.brand && (
-                        <Badge variant="outline" className="text-xs font-normal bg-gray-700 text-gray-100 border-gray-600">
-                          {tool.brand}
-                        </Badge>
+
+                  {/* Tool Info - Overlaid on image */}
+                  <div className="absolute inset-x-0 bottom-0 p-5 space-y-2">
+                    <h3 className="font-bold text-lg text-white drop-shadow-lg leading-tight">{tool.name}</h3>
+                    <div className="space-y-1">
+                      {(tool.brand || tool.power_source) && (
+                        <div className="flex gap-2 text-sm text-white/95 drop-shadow-md">
+                          {tool.brand && <span className="font-medium">{tool.brand}</span>}
+                          {tool.power_source && (
+                            <span className="flex items-center gap-1">
+                              <Zap className="h-3.5 w-3.5" />
+                              {toolPowerSourceLabels[tool.power_source as keyof typeof toolPowerSourceLabels]}
+                            </span>
+                          )}
+                        </div>
                       )}
-                      {tool.power_source && (
-                        <Badge variant="outline" className="text-xs font-normal border-gray-300 text-gray-600 dark:border-gray-700 dark:text-gray-400">
-                          {toolPowerSourceLabels[tool.power_source as keyof typeof toolPowerSourceLabels]}
-                        </Badge>
-                      )}
-                     </div>
-                   )}
-                 </CardHeader>
-               </Card>
-             </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Link>
           ))}
         </div>
       )}
