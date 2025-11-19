@@ -205,7 +205,7 @@ export const PendingActions = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             {requestsToMe.map((request) => (
-              <div key={request.id} className="p-4 border rounded-lg hover:bg-accent/50 transition-colors duration-200">
+              <div key={request.id} className="p-4 border rounded-lg hover:bg-primary/[0.07] transition-colors duration-200">
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
                     <Avatar className="h-12 w-12 flex-shrink-0">
@@ -263,7 +263,7 @@ export const PendingActions = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             {requestsFromMe.map((request) => (
-              <div key={request.id} className="p-4 border rounded-lg hover:bg-accent/50 transition-colors duration-200">
+              <div key={request.id} className="p-4 border rounded-lg hover:bg-primary/[0.07] transition-colors duration-200">
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
                     <Avatar className="h-12 w-12 flex-shrink-0">
