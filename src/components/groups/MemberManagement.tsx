@@ -21,6 +21,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, MoreHorizontal, ShieldAlert, UserMinus, UserCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { UserAvatar } from "@/components/ui/user-avatar";
 
 interface Member {
   id: string;
@@ -29,6 +30,7 @@ interface Member {
   joined_at: string;
   profile: {
     display_name: string;
+    avatar_url: string | null;
   };
 }
 
@@ -171,8 +173,17 @@ const MemberManagement = ({
           {members.map((member) => (
             <TableRow key={member.id}>
               <TableCell className="font-medium">
-                {member.profile.display_name}
-                {member.user_id === currentUser?.id && " (You)"}
+                <div className="flex items-center gap-3">
+                  <UserAvatar
+                    displayName={member.profile.display_name}
+                    avatarUrl={member.profile.avatar_url}
+                    size="sm"
+                  />
+                  <span>
+                    {member.profile.display_name}
+                    {member.user_id === currentUser?.id && " (You)"}
+                  </span>
+                </div>
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-1">

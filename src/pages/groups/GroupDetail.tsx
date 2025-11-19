@@ -62,6 +62,7 @@ type Member = {
   joined_at: string;
   profile: {
     display_name: string;
+    avatar_url: string | null;
   };
 };
 
@@ -120,7 +121,7 @@ const GroupDetail = () => {
           user_id,
           role,
           created_at,
-          profiles:user_id(display_name)
+          profiles:user_id(display_name, avatar_url)
         `)
         .eq('group_id', id);
         
@@ -133,7 +134,8 @@ const GroupDetail = () => {
         role: member.role,
         joined_at: member.created_at,
         profile: {
-          display_name: member.profiles?.display_name || 'Unknown User'
+          display_name: member.profiles?.display_name || 'Unknown User',
+          avatar_url: member.profiles?.avatar_url || null
         }
       }));
       
