@@ -181,7 +181,7 @@ export const ActiveBorrowingList = () => {
             <div 
               key={request.id} 
               onClick={() => navigate(`/requests/${request.id}`)}
-              className="p-4 border rounded-lg hover:bg-accent/50 transition-colors duration-200 cursor-pointer"
+              className="p-4 border rounded-lg hover:bg-primary/[0.07] transition-colors duration-200 cursor-pointer"
             >
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
