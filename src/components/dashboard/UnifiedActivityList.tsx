@@ -465,7 +465,7 @@ export const UnifiedActivityList = () => {
                     
                     {/* Action Buttons - Only show if there are actions */}
                     {(activity.type === 'pending_to_me' || activity.type === 'pending_from_me' || 
-                      (activity.type === 'borrowing' && (activity.status === 'approved' || activity.status === 'picked_up')) ||
+                      (activity.type === 'borrowing' && (activity.status === 'approved' || activity.status === 'picked_up' || activity.status === 'overdue')) ||
                       (activity.type === 'lending' && activity.status === 'return_pending')) && (
                       <div className="flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
                         {activity.type === 'pending_to_me' && (
@@ -510,7 +510,7 @@ export const UnifiedActivityList = () => {
                             Confirm Pickup
                           </Button>
                         )}
-                        {activity.type === 'borrowing' && activity.status === 'picked_up' && (
+                        {activity.type === 'borrowing' && (activity.status === 'picked_up' || activity.status === 'overdue') && (
                           <Button
                             size="sm"
                             className="flex-1"
