@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { format } from "date-fns";
+import { UserAvatar } from "@/components/ui/user-avatar";
 
 const getAvatarColor = (name: string) => {
   const colors = [
@@ -52,7 +53,8 @@ export const PendingActions = () => {
             image_url
           ),
           profiles (
-            display_name
+            display_name,
+            avatar_url
           )
         `)
         .in('tool_id', toolIds)
@@ -82,7 +84,8 @@ export const PendingActions = () => {
             name,
             image_url,
             profiles (
-              display_name
+              display_name,
+              avatar_url
             )
           )
         `)
@@ -217,9 +220,14 @@ export const PendingActions = () => {
                     
                     <div className="min-w-0 flex-1">
                       <h4 className="font-medium truncate">{request.tools.name}</h4>
-                      <p className="text-sm text-muted-foreground mb-1">
-                        From: {request.profiles?.display_name}
-                      </p>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                        <UserAvatar
+                          displayName={request.profiles?.display_name || "Unknown"}
+                          avatarUrl={request.profiles?.avatar_url}
+                          size="sm"
+                        />
+                        <span>from {request.profiles?.display_name}</span>
+                      </div>
                       <p className="text-sm text-muted-foreground">
                         {format(new Date(request.start_date), 'MMM d')} - {format(new Date(request.end_date), 'MMM d, yyyy')}
                       </p>
@@ -275,9 +283,14 @@ export const PendingActions = () => {
                     
                     <div className="min-w-0 flex-1">
                       <h4 className="font-medium truncate">{request.tools.name}</h4>
-                      <p className="text-sm text-muted-foreground mb-1">
-                        To: {request.tools.profiles?.display_name}
-                      </p>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                        <UserAvatar
+                          displayName={request.tools.profiles?.display_name || "Unknown"}
+                          avatarUrl={request.tools.profiles?.avatar_url}
+                          size="sm"
+                        />
+                        <span>to {request.tools.profiles?.display_name}</span>
+                      </div>
                       <p className="text-sm text-muted-foreground">
                         {format(new Date(request.start_date), 'MMM d')} - {format(new Date(request.end_date), 'MMM d, yyyy')}
                       </p>

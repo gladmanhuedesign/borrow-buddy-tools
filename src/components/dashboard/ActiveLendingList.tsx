@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { toolPowerSourceLabels } from "@/config/toolCategories";
 import { Zap, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { UserAvatar } from "@/components/ui/user-avatar";
 
 const getStatusColor = (status: string, isOverdue: boolean) => {
   if (isOverdue) return "bg-red-100 text-red-800 border-red-200";
@@ -72,7 +73,8 @@ export const ActiveLendingList = () => {
             power_source
           ),
           profiles!tool_requests_requester_id_fkey (
-            display_name
+            display_name,
+            avatar_url
           )
         `)
         .in('tool_id', toolIds)
@@ -209,9 +211,14 @@ export const ActiveLendingList = () => {
                         )}
                       </div>
                     )}
-                    <p className="text-sm text-muted-foreground mb-1">
-                      To: {request.profiles?.display_name}
-                    </p>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                      <UserAvatar
+                        displayName={request.profiles?.display_name || "Unknown"}
+                        avatarUrl={request.profiles?.avatar_url}
+                        size="sm"
+                      />
+                      <span>to {request.profiles?.display_name}</span>
+                    </div>
                     <p className="text-sm text-muted-foreground">
                       Due: {format(new Date(request.end_date), 'MMM d, yyyy')}
                     </p>
