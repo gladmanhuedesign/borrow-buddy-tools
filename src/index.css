@@ -32,7 +32,7 @@
     --surface-2: 0 0% 98%;
     --surface-3: 0 0% 97%;
     --ring: 222.2 84% 4.9%;
-    --radius: 1.5rem;
+    --radius: .5rem;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -96,7 +96,7 @@
     --ring: 199 89% 48%;
 
     /* Radius */
-    --radius: 1.5rem;
+    --radius: .5rem;
 
     /* Sidebar - App shell */
     --sidebar-background: 0 0% 8%;
