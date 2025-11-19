@@ -12,6 +12,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import GroupInviteLink from "@/components/groups/GroupInviteLink";
 import MemberManagement from "@/components/groups/MemberManagement";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import {
   Form,
   FormControl,
@@ -189,7 +190,7 @@ const GroupDetail = () => {
           power_source,
           category_id,
           owner_id,
-          profiles:owner_id(display_name),
+          profiles:owner_id(display_name, avatar_url),
           tool_categories:category_id(name)
         `)
         .in('owner_id', memberIds.map(m => m.user_id));
@@ -470,54 +471,79 @@ const GroupDetail = () => {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {tools.map((tool: any) => (
-                <Card key={tool.id} className="h-full cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/tools/${tool.id}`)}>
-                  <CardContent className="p-4">
-                    <div className="flex gap-4">
-                      <div className="flex-shrink-0">
-                        {tool.image_url ? (
-                          <img 
-                            src={tool.image_url} 
-                            alt={tool.name}
-                            className="w-20 h-20 object-cover rounded-md"
-                          />
-                        ) : (
-                          <div className="w-20 h-20 bg-muted rounded-md flex items-center justify-center text-muted-foreground text-xs">
-                            No image
+                <div
+                  key={tool.id}
+                  onClick={() => navigate(`/tools/${tool.id}`)}
+                  className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] h-[280px]"
+                >
+                  {/* Full Height Image Section */}
+                  <div className="absolute inset-0 bg-background/5">
+                    {tool.image_url ? (
+                      <img
+                        src={tool.image_url}
+                        alt={tool.name}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
+                        <div className="text-primary/40 text-4xl">🔧</div>
+                      </div>
+                    )}
+                    
+                    {/* Smooth Vertical Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 via-40% to-transparent" />
+                    
+                    {/* Status Badge */}
+                    <div className="absolute top-3 right-3">
+                      <Badge 
+                        className={`text-xs ${
+                          tool.status === 'available' 
+                            ? 'bg-green-600 hover:bg-green-700 text-white' 
+                            : tool.status === 'borrowed'
+                            ? 'bg-orange-600 hover:bg-orange-700 text-white'
+                            : tool.status === 'unavailable'
+                            ? 'bg-red-600 hover:bg-red-700 text-white'
+                            : 'bg-gray-600 hover:bg-gray-700 text-white'
+                        }`}
+                      >
+                        {tool.status}
+                      </Badge>
+                    </div>
+
+                    {/* Category Badge */}
+                    {tool.tool_categories?.name && (
+                      <div className="absolute top-3 left-3">
+                        <Badge variant="outline" className="bg-background/80 backdrop-blur-sm">
+                          {tool.tool_categories.name}
+                        </Badge>
+                      </div>
+                    )}
+
+                    {/* Tool Info - Overlaid on image */}
+                    <div className="absolute inset-x-0 bottom-0 p-5 space-y-2">
+                      <h3 className="font-bold text-lg text-white drop-shadow-lg leading-tight line-clamp-1">{tool.name}</h3>
+                      <div className="space-y-1">
+                        {(tool.brand || tool.power_source) && (
+                          <div className="flex gap-2 text-sm text-white/95 drop-shadow-md">
+                            {tool.brand && <span className="font-medium line-clamp-1">{tool.brand}</span>}
+                            {tool.power_source && (
+                              <span className="line-clamp-1">Power: {tool.power_source}</span>
+                            )}
                           </div>
                         )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold line-clamp-1 mb-2">{tool.name}</h3>
-                        <div className="space-y-1 text-sm text-muted-foreground">
-                          {tool.brand && (
-                            <p className="line-clamp-1">Brand: {tool.brand}</p>
-                          )}
-                          {tool.power_source && (
-                            <p className="line-clamp-1">Power: {tool.power_source}</p>
-                          )}
-                          {tool.tool_categories?.name && (
-                            <p className="line-clamp-1">Category: {tool.tool_categories.name}</p>
-                          )}
-                        </div>
-                        <div className="mt-2 flex items-center gap-2">
-                          <Badge 
-                            className={`text-xs ${
-                              tool.status === 'available' 
-                                ? 'bg-green-600 hover:bg-green-700 text-white' 
-                                : tool.status === 'borrowed'
-                                ? 'bg-orange-600 hover:bg-orange-700 text-white'
-                                : tool.status === 'unavailable'
-                                ? 'bg-red-600 hover:bg-red-700 text-white'
-                                : 'bg-gray-600 hover:bg-gray-700 text-white'
-                            }`}
-                          >
-                            {tool.status}
-                          </Badge>
+                        <div className="flex items-center gap-2 text-xs text-white/80 drop-shadow-md">
+                          <UserAvatar
+                            displayName={tool.profiles?.display_name || "Unknown"}
+                            avatarUrl={tool.profiles?.avatar_url}
+                            size="sm"
+                            className="h-6 w-6 text-xs"
+                          />
+                          <span>by {tool.profiles?.display_name || "Unknown"}</span>
                         </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
             </div>
           )}
