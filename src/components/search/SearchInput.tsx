@@ -127,7 +127,7 @@ export const SearchInput = ({ onNavigate }: { onNavigate?: () => void } = {}) =>
                   key={tool.id}
                   onClick={() => handleResultClick(tool.id)}
                   className={cn(
-                    "w-full flex items-center gap-3 p-3 text-left hover:bg-primary/8 transition-colors",
+                    "w-full flex items-center gap-3 p-3 text-left hover:bg-primary/8 transition-all duration-200 hover:scale-[1.02] hover:shadow-md",
                     selectedIndex === index && "bg-primary/8"
                   )}
                 >
