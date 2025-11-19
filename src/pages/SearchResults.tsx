@@ -12,6 +12,7 @@ import { useToolSearch } from "@/hooks/useToolSearch";
 import { useFilterOptions } from "@/hooks/useFilterOptions";
 import { toolPowerSourceLabels } from "@/config/toolCategories";
 import { cn } from "@/lib/utils";
+import { UserAvatar } from "@/components/ui/user-avatar";
 
 const SearchResults = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -272,9 +273,15 @@ const SearchResults = () => {
                       <p className="text-sm text-white/90 drop-shadow-md">
                         {tool.group_name}
                       </p>
-                      <p className="text-xs text-white/80 drop-shadow-md">
-                        by {tool.owner_name}
-                      </p>
+                      <div className="flex items-center gap-2 text-xs text-white/80 drop-shadow-md">
+                        <UserAvatar
+                          displayName={tool.owner_name}
+                          avatarUrl={tool.owner_avatar_url}
+                          size="sm"
+                          className="h-6 w-6 text-xs"
+                        />
+                        <span>by {tool.owner_name}</span>
+                      </div>
                     </div>
                   </div>
                 </div>

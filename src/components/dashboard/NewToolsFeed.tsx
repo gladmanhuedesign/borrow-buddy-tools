@@ -8,6 +8,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Hammer, Clock, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toolPowerSourceLabels } from "@/config/toolCategories";
+import { UserAvatar } from "@/components/ui/user-avatar";
 
 type NewTool = {
   id: string;
@@ -16,6 +17,7 @@ type NewTool = {
   image_url: string | null;
   created_at: string;
   owner_name: string;
+  owner_avatar_url: string | null;
   group_name: string;
   owner_id: string;
   brand: string | null;
@@ -74,7 +76,7 @@ export const NewToolsFeed = () => {
       const [ownersResponse, groupsResponse] = await Promise.all([
         supabase
           .from('profiles')
-          .select('id, display_name')
+          .select('id, display_name, avatar_url')
           .in('id', ownerIds),
         supabase
           .from('groups')
@@ -84,7 +86,7 @@ export const NewToolsFeed = () => {
 
       // Create lookup maps
       const ownersMap = new Map(
-        (ownersResponse.data || []).map(owner => [owner.id, owner.display_name])
+        (ownersResponse.data || []).map(owner => [owner.id, { name: owner.display_name, avatar: owner.avatar_url }])
       );
       const groupsMap = new Map(
         (groupsResponse.data || []).map(group => [group.id, group.name])
@@ -99,18 +101,22 @@ export const NewToolsFeed = () => {
       });
 
       // Combine the data
-      return toolsData.map(tool => ({
-        id: tool.id,
-        name: tool.name,
-        description: tool.description,
-        image_url: tool.image_url,
-        created_at: tool.created_at,
-        owner_name: ownersMap.get(tool.owner_id) || 'Unknown User',
-        group_name: groupsMap.get(userGroupMap.get(tool.owner_id) || '') || 'Unknown Group',
-        owner_id: tool.owner_id,
-        brand: tool.brand,
-        power_source: tool.power_source
-      })) as NewTool[];
+      return toolsData.map(tool => {
+        const ownerData = ownersMap.get(tool.owner_id);
+        return {
+          id: tool.id,
+          name: tool.name,
+          description: tool.description,
+          image_url: tool.image_url,
+          created_at: tool.created_at,
+          owner_name: ownerData?.name || 'Unknown User',
+          owner_avatar_url: ownerData?.avatar || null,
+          group_name: groupsMap.get(userGroupMap.get(tool.owner_id) || '') || 'Unknown Group',
+          owner_id: tool.owner_id,
+          brand: tool.brand,
+          power_source: tool.power_source
+        };
+      }) as NewTool[];
     },
     enabled: !!currentUser?.id
   });
@@ -191,8 +197,13 @@ export const NewToolsFeed = () => {
                       )}
                     </div>
                   )}
-                  <p className="text-sm text-muted-foreground">
-                    Added by {tool.owner_name} in {tool.group_name}
+                  <p className="text-sm text-muted-foreground flex items-center gap-2">
+                    <UserAvatar
+                      displayName={tool.owner_name}
+                      avatarUrl={tool.owner_avatar_url}
+                      size="sm"
+                    />
+                    <span>Added by {tool.owner_name} in {tool.group_name}</span>
                   </p>
                   <div className="flex items-center text-xs text-muted-foreground mt-1">
                     <Clock className="h-3 w-3 mr-1" />

@@ -9,6 +9,8 @@ import { toolStatusLabels, toolPowerSourceLabels } from "@/config/toolCategories
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/components/ui/use-toast";
+import { UserAvatar } from "@/components/ui/user-avatar";
+import { useProfile } from "@/hooks/useProfile";
 
 interface Tool {
   id: string;
@@ -25,6 +27,7 @@ interface Tool {
 const Tools = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  const { profile } = useProfile();
   const [tools, setTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -144,6 +147,15 @@ const Tools = () => {
                           )}
                         </div>
                       )}
+                      <div className="flex items-center gap-2 text-xs text-white/80 drop-shadow-md">
+                        <UserAvatar
+                          displayName={currentUser?.displayName || "You"}
+                          avatarUrl={profile?.avatar_url}
+                          size="sm"
+                          className="h-6 w-6 text-xs"
+                        />
+                        <span>Owned by you</span>
+                      </div>
                     </div>
                   </div>
                 </div>
