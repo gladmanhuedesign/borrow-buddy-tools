@@ -176,7 +176,7 @@ export const NewToolsFeed = () => {
       <CardContent>
         <div className="space-y-4">
           {newTools.map((tool) => (
-            <div key={tool.id} className="flex items-center justify-between space-x-3 p-3 rounded-lg border bg-card hover:bg-primary/[0.07] transition-colors">
+            <div key={tool.id} className="flex items-center justify-between space-x-3 p-3 rounded-lg bg-surface-3 hover:bg-primary/[0.07] transition-colors">
               <div className="flex items-center space-x-3 flex-1">
                 <Avatar className="h-12 w-12">
                   <AvatarImage src={tool.image_url || undefined} alt={tool.name} />
