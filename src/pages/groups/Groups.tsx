@@ -14,50 +14,61 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 // Separate component for the groups list
-const GroupsList = ({ groups }: { groups: Group[] }) => (
-  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-    {groups.map((group) => (
-      <Link key={group.id} to={`/groups/${group.id}`}>
-        <Card className="h-full transition-shadow hover:shadow-md">
-          <CardHeader>
-            <CardTitle className="line-clamp-1">{group.name}</CardTitle>
-            <CardDescription className="line-clamp-2">
-              {group.description}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center text-sm text-muted-foreground">
-              <Users className="mr-1 h-4 w-4" />
-              {group.memberCount} {group.memberCount === 1 ? "member" : "members"}
+const GroupsList = ({ groups }: { groups: Group[] }) => {
+  const navigate = useNavigate();
+  
+  return (
+    <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+      {groups.map((group) => (
+        <div
+          key={group.id}
+          onClick={() => navigate(`/groups/${group.id}`)}
+          className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] h-[280px]"
+        >
+          {/* Full Height Background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-primary/20 to-primary/10">
+            {/* Group Icon */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-10">
+              <Users className="h-32 w-32" />
             </div>
-          </CardContent>
-          <CardFooter>
-            <Button variant="outline" size="sm" className="w-full">
-              View Group
-            </Button>
-          </CardFooter>
-        </Card>
-      </Link>
-    ))}
-  </div>
-);
+            
+            {/* Smooth Vertical Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 via-40% to-transparent" />
+            
+            {/* Privacy Badge */}
+            {group.isPrivate && (
+              <div className="absolute top-3 right-3">
+                <Badge variant="outline" className="bg-background/80 backdrop-blur-sm">
+                  Private
+                </Badge>
+              </div>
+            )}
+
+            {/* Group Info - Overlaid */}
+            <div className="absolute inset-x-0 bottom-0 p-5 space-y-2">
+              <h3 className="font-bold text-xl text-white drop-shadow-lg leading-tight line-clamp-2">{group.name}</h3>
+              {group.description && (
+                <p className="text-sm text-white/90 drop-shadow-md line-clamp-2">{group.description}</p>
+              )}
+              <div className="flex items-center gap-2 text-sm text-white/95 drop-shadow-md">
+                <Users className="h-4 w-4" />
+                <span>{group.memberCount} {group.memberCount === 1 ? "member" : "members"}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 // Separate component for loading state
 const LoadingState = () => (
-  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+  <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
     {[1, 2, 3].map((i) => (
-      <Card key={i} className="h-full">
-        <CardHeader>
-          <Skeleton className="h-6 w-3/4" />
-          <Skeleton className="h-4 w-full" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-4 w-1/3" />
-        </CardContent>
-        <CardFooter>
-          <Skeleton className="h-10 w-full" />
-        </CardFooter>
-      </Card>
+      <div key={i} className="rounded-2xl overflow-hidden h-[280px] animate-pulse">
+        <div className="h-full w-full bg-muted"></div>
+      </div>
     ))}
   </div>
 );
