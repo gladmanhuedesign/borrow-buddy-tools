@@ -203,7 +203,11 @@ export const NewToolsFeed = () => {
                       avatarUrl={tool.owner_avatar_url}
                       size="sm"
                     />
-                    <span>Added by {tool.owner_name} in {tool.group_name}</span>
+                    <span>
+                      {tool.owner_id === currentUser?.id 
+                        ? "Owned by you" 
+                        : `Owned by ${tool.owner_name}`} • {tool.group_name}
+                    </span>
                   </p>
                   <div className="flex items-center text-xs text-muted-foreground mt-1">
                     <Clock className="h-3 w-3 mr-1" />
