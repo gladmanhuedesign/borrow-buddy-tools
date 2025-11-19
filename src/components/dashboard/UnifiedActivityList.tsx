@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ArrowDownLeft, ArrowUpRight, Clock, MessageCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { UserAvatar } from "@/components/ui/user-avatar";
 
 type ActivityType = "borrowing" | "lending" | "pending_to_me" | "pending_from_me";
 
@@ -24,6 +25,7 @@ type ActivityItem = {
   start_date?: string;
   end_date?: string;
   other_party_name: string;
+  other_party_avatar?: string | null;
   message?: string;
   unread_messages: number;
   total_messages: number;
@@ -90,7 +92,7 @@ export const UnifiedActivityList = () => {
             id,
             name,
             image_url,
-            profiles (display_name)
+            profiles (display_name, avatar_url)
           )
         `)
         .eq('requester_id', currentUser.id)
@@ -122,6 +124,7 @@ export const UnifiedActivityList = () => {
             start_date: item.start_date,
             end_date: item.end_date,
             other_party_name: (item.tools as any).profiles?.display_name || 'Unknown',
+            other_party_avatar: (item.tools as any).profiles?.avatar_url,
             unread_messages: unreadCount || 0,
             total_messages: totalCount || 0,
             isOverdue
@@ -151,7 +154,8 @@ export const UnifiedActivityList = () => {
               image_url
             ),
             profiles!tool_requests_requester_id_fkey (
-              display_name
+              display_name,
+              avatar_url
             )
           `)
           .in('tool_id', toolIds)
@@ -183,6 +187,7 @@ export const UnifiedActivityList = () => {
               start_date: item.start_date,
               end_date: item.end_date,
               other_party_name: (item.profiles as any)?.display_name || 'Unknown',
+              other_party_avatar: (item.profiles as any)?.avatar_url,
               unread_messages: unreadCount || 0,
               total_messages: totalCount || 0,
               isOverdue
@@ -203,7 +208,8 @@ export const UnifiedActivityList = () => {
               image_url
             ),
             profiles (
-              display_name
+              display_name,
+              avatar_url
             )
           `)
           .in('tool_id', toolIds)
@@ -219,6 +225,7 @@ export const UnifiedActivityList = () => {
               tool_image: (item.tools as any).image_url,
               status: item.status,
               other_party_name: (item.profiles as any)?.display_name || 'Unknown',
+              other_party_avatar: (item.profiles as any)?.avatar_url,
               message: item.message || '',
               unread_messages: 0,
               total_messages: 0
@@ -239,7 +246,8 @@ export const UnifiedActivityList = () => {
             name,
             image_url,
             profiles (
-              display_name
+              display_name,
+              avatar_url
             )
           )
         `)
@@ -256,6 +264,7 @@ export const UnifiedActivityList = () => {
             tool_image: (item.tools as any).image_url,
             status: item.status,
             other_party_name: (item.tools as any).profiles?.display_name || 'Unknown',
+            other_party_avatar: (item.tools as any).profiles?.avatar_url,
             message: item.message || '',
             unread_messages: 0,
             total_messages: 0
@@ -434,11 +443,18 @@ export const UnifiedActivityList = () => {
                   {/* Tool Name and Party Info - Overlaid on image */}
                   <div className="absolute inset-x-0 bottom-0 p-5 space-y-2">
                     <h3 className="font-bold text-lg text-white drop-shadow-lg leading-tight">{activity.tool_name}</h3>
-                    <p className="text-sm text-white/95 drop-shadow-md">
-                      {activity.type === 'borrowing' ? `from ${activity.other_party_name}` : 
-                       activity.type === 'lending' ? `to ${activity.other_party_name}` :
-                       `by ${activity.other_party_name}`}
-                    </p>
+                    <div className="flex items-center gap-2 text-sm text-white/95 drop-shadow-md">
+                      <UserAvatar
+                        displayName={activity.other_party_name}
+                        avatarUrl={activity.other_party_avatar}
+                        size="sm"
+                      />
+                      <span>
+                        {activity.type === 'borrowing' ? `from ${activity.other_party_name}` : 
+                         activity.type === 'lending' ? `to ${activity.other_party_name}` :
+                         `by ${activity.other_party_name}`}
+                      </span>
+                    </div>
                     
                     {activity.end_date && (
                       <div className="flex items-center text-sm text-white/95 drop-shadow-md">
