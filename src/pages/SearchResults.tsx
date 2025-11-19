@@ -13,10 +13,12 @@ import { useFilterOptions } from "@/hooks/useFilterOptions";
 import { toolPowerSourceLabels } from "@/config/toolCategories";
 import { cn } from "@/lib/utils";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { useAuth } from "@/contexts/AuthContext";
 
 const SearchResults = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const initialQuery = searchParams.get('q') || '';
   
   const [searchTerm, setSearchTerm] = useState(initialQuery);
@@ -280,7 +282,11 @@ const SearchResults = () => {
                           size="sm"
                           className="h-6 w-6 text-xs"
                         />
-                        <span>by {tool.owner_name}</span>
+                        <span>
+                          {tool.owner_id === currentUser?.id 
+                            ? "Owned by you" 
+                            : `Owned by ${tool.owner_name}`}
+                        </span>
                       </div>
                     </div>
                   </div>

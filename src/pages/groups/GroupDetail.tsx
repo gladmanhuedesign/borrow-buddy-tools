@@ -538,7 +538,11 @@ const GroupDetail = () => {
                             size="sm"
                             className="h-6 w-6 text-xs"
                           />
-                          <span>by {tool.profiles?.display_name || "Unknown"}</span>
+                          <span>
+                            {tool.owner_id === currentUser?.id 
+                              ? "Owned by you" 
+                              : `Owned by ${tool.profiles?.display_name || "Unknown"}`}
+                          </span>
                         </div>
                       </div>
                     </div>
