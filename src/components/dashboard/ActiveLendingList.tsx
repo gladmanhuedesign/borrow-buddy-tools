@@ -14,7 +14,6 @@ import { toolPowerSourceLabels } from "@/config/toolCategories";
 import { Zap, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { getThumbnailUrl } from "@/utils/imageUtils";
 
 const getStatusColor = (status: string, isOverdue: boolean) => {
   if (isOverdue) return "bg-red-100 text-red-800 border-red-200";
@@ -172,7 +171,7 @@ export const ActiveLendingList = () => {
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
                   <Avatar className="h-12 w-12 flex-shrink-0">
-                    <AvatarImage src={getThumbnailUrl(tool.image_url) || ''} alt={tool.name} />
+                    <AvatarImage src={tool.image_url || ''} alt={tool.name} />
                     <AvatarFallback className={`${getAvatarColor(tool.name)} text-white font-semibold`}>
                       {tool.name.charAt(0).toUpperCase()}
                     </AvatarFallback>

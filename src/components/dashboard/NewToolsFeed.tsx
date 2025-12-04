@@ -9,7 +9,6 @@ import { Hammer, Clock, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toolPowerSourceLabels } from "@/config/toolCategories";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { getThumbnailUrl } from "@/utils/imageUtils";
 
 type NewTool = {
   id: string;
@@ -180,7 +179,7 @@ export const NewToolsFeed = () => {
             <div key={tool.id} className="flex items-center justify-between space-x-3 p-3 rounded-lg bg-surface-3 hover:bg-primary/[0.07] transition-colors">
               <div className="flex items-center space-x-3 flex-1">
                 <Avatar className="h-12 w-12">
-                  <AvatarImage src={getThumbnailUrl(tool.image_url) || undefined} alt={tool.name} />
+                  <AvatarImage src={tool.image_url || undefined} alt={tool.name} />
                   <AvatarFallback>
                     <Hammer className="h-6 w-6" />
                   </AvatarFallback>
