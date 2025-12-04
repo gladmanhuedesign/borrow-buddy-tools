@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { format } from "date-fns";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { getThumbnailUrl } from "@/utils/imageUtils";
 
 const getAvatarColor = (name: string) => {
   const colors = [
@@ -212,7 +213,7 @@ export const PendingActions = () => {
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
                     <Avatar className="h-12 w-12 flex-shrink-0">
-                      <AvatarImage src={request.tools.image_url || ''} alt={request.tools.name} />
+                      <AvatarImage src={getThumbnailUrl(request.tools.image_url) || ''} alt={request.tools.name} />
                       <AvatarFallback className={`${getAvatarColor(request.tools.name)} text-white font-semibold`}>
                         {request.tools.name.charAt(0).toUpperCase()}
                       </AvatarFallback>
@@ -275,7 +276,7 @@ export const PendingActions = () => {
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
                     <Avatar className="h-12 w-12 flex-shrink-0">
-                      <AvatarImage src={request.tools.image_url || ''} alt={request.tools.name} />
+                      <AvatarImage src={getThumbnailUrl(request.tools.image_url) || ''} alt={request.tools.name} />
                       <AvatarFallback className={`${getAvatarColor(request.tools.name)} text-white font-semibold`}>
                         {request.tools.name.charAt(0).toUpperCase()}
                       </AvatarFallback>

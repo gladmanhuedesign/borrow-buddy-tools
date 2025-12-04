@@ -240,6 +240,19 @@ const AddTool = () => {
         .from('tool-images')
         .getPublicUrl(filePath);
 
+      // Generate thumbnails in the background
+      supabase.functions.invoke('generate-thumbnails', {
+        body: { imagePath: filePath, bucket: 'tool-images' }
+      }).then(({ data: thumbData, error: thumbError }) => {
+        if (thumbError) {
+          console.error("Thumbnail generation error:", thumbError);
+        } else {
+          console.log("Thumbnails generated:", thumbData);
+        }
+      }).catch(err => {
+        console.error("Thumbnail generation failed:", err);
+      });
+
       return data.publicUrl;
     } catch (error) {
       console.error("Error uploading image:", error);
