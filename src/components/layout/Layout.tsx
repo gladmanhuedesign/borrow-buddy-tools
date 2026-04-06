@@ -8,7 +8,7 @@ const Layout = () => {
   const { currentUser } = useAuth();
 
   return (
-    <div className="min-h-screen bg-surface-1">
+    <div className="min-h-screen relative">
       <TopHeader />
       <main className="container mx-auto pb-20 pt-6 px-4" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
         <Outlet />

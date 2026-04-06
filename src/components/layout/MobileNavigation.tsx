@@ -17,7 +17,6 @@ const MobileNavigation = () => {
   useEffect(() => {
     if (!currentUser?.email) return;
 
-    // Fetch pending invitations count
     const fetchInvitationCount = async () => {
       const { count, error } = await supabase
         .from('group_invites')
@@ -34,7 +33,6 @@ const MobileNavigation = () => {
 
     fetchInvitationCount();
     
-    // Set up subscription to monitor changes to invitations
     const channel = supabase
       .channel('invitation-changes')
       .on('postgres_changes', 
@@ -84,7 +82,7 @@ const MobileNavigation = () => {
   ];
   
   return (
-    <nav className="fixed bottom-0 left-0 z-40 w-full border-t bg-card/50 backdrop-blur-lg md:hidden pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed bottom-0 left-0 z-40 w-full bg-card glass-strong md:hidden pb-[env(safe-area-inset-bottom)]">
       <div className="grid grid-cols-4">
         {navItems.map((item) => (
           <Link
