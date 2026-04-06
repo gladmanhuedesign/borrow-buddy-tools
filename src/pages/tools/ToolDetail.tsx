@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tool } from "@/types";
 import { toolConditionLabels, toolStatusLabels, toolPowerSourceLabels } from "@/config/toolCategories";
-import { ArrowLeft, AlertCircle, Clock, Loader2, Zap, Battery, Fuel, Wrench, Wind } from "lucide-react";
+import { ArrowLeft, AlertCircle, Clock, Loader2, Zap, Battery, Fuel, Wrench, Wind, Trash2 } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,6 +29,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { ToolHistory } from "@/components/tools/ToolHistory";
 
 const requestFormSchema = z.object({
@@ -53,6 +64,7 @@ const ToolDetail = () => {
   const [isOwner, setIsOwner] = useState(false);
   const [requestDialogOpen, setRequestDialogOpen] = useState(false);
   const [requesting, setRequesting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [categories, setCategories] = useState<ToolCategory[]>([]);
 
   const requestForm = useForm<RequestFormValues>({
@@ -488,6 +500,58 @@ const ToolDetail = () => {
                   >
                     {tool.status === "available" ? "Mark as Unavailable" : "Mark as Available"}
                   </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="destructive" 
+                        className="w-full"
+                        disabled={tool.status === "borrowed"}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" /> Delete Tool
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete "{tool.name}"?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete the tool and all associated request history.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={async () => {
+                            try {
+                              setDeleting(true);
+                              const { error } = await supabase
+                                .from('tools')
+                                .delete()
+                                .eq('id', tool.id);
+                              if (error) throw error;
+                              toast({
+                                title: "Tool deleted",
+                                description: `"${tool.name}" has been removed.`,
+                              });
+                              navigate("/tools");
+                            } catch (error) {
+                              console.error("Error deleting tool:", error);
+                              toast({
+                                title: "Delete failed",
+                                description: "Could not delete the tool. It may have active requests.",
+                                variant: "destructive",
+                              });
+                            } finally {
+                              setDeleting(false);
+                            }
+                          }}
+                          disabled={deleting}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          {deleting ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               )}
             </CardContent>
