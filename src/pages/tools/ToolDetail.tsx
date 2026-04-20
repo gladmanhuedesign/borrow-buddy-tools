@@ -41,6 +41,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ToolHistory } from "@/components/tools/ToolHistory";
+import { FormattedDescription } from "@/components/tools/FormattedDescription";
 
 const requestFormSchema = z.object({
   notes: z.string().optional(),
