@@ -331,7 +331,7 @@ const ToolDetail = () => {
 
           <div className="mt-6 space-y-4">
             <div>
-              <h2 className="font-medium">Description</h2>
+              <h2 className="font-medium">Description of Use</h2>
               <p className="mt-1 text-muted-foreground">{tool.description}</p>
             </div>
 
