@@ -41,6 +41,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ToolHistory } from "@/components/tools/ToolHistory";
+import { FormattedDescription } from "@/components/tools/FormattedDescription";
 
 const requestFormSchema = z.object({
   notes: z.string().optional(),
@@ -332,13 +333,13 @@ const ToolDetail = () => {
           <div className="mt-6 space-y-4">
             <div>
               <h2 className="font-medium">Description of Use</h2>
-              <p className="mt-1 text-muted-foreground">{tool.description}</p>
+              <FormattedDescription text={tool.description} />
             </div>
 
             {tool.instructions && tool.instructions !== tool.description && (
               <div>
                 <h2 className="font-medium">Usage Instructions</h2>
-                <p className="mt-1 text-muted-foreground">{tool.instructions}</p>
+                <FormattedDescription text={tool.instructions} />
               </div>
             )}
           </div>
