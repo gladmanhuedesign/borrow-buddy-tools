@@ -8,7 +8,7 @@ const Index = () => {
     isAuthenticated
   } = useAuth();
   return <div className="flex flex-col min-h-screen">
-      <header className="w-full py-6 px-4 bg-background/95 border-b">
+      <header className="w-full py-6 px-4 bg-background/40 glass-subtle">
         <div className="w-full sm:container flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Wrench className="h-6 w-6" />
@@ -87,7 +87,7 @@ const Index = () => {
         </section>
       </main>
 
-      <footer className="w-full py-6 px-4 border-t mt-auto">
+      <footer className="w-full py-6 px-4 mt-auto">
         <div className="container mx-auto text-center text-muted-foreground">
           <p>© 2025 Borrow Buddy. All rights reserved.</p>
         </div>
