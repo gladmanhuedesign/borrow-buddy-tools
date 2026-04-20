@@ -897,10 +897,10 @@ const AddTool = () => {
             name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Description (Optional)</FormLabel>
+                <FormLabel>Description of Use (Optional)</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder="Describe your tool, including make, model, and details"
+                    placeholder="Describe what this tool is used for and how to use it"
                     className="min-h-[120px]"
                     {...field}
                   />
