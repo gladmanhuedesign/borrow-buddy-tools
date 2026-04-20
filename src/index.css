@@ -76,8 +76,8 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 100% / 0.08;
-    --input: 0 0% 100% / 0.08;
+    --border: 0 0% 100% / 0.04;
+    --input: 0 0% 100% / 0.06;
 
     --surface-1: 0 0% 100% / 0.03;
     --surface-2: 0 0% 100% / 0.05;
