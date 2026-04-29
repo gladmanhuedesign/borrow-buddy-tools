@@ -30,9 +30,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ToolDraft } from "@/types/toolDraft";
+import { ToolDraft, ToolAISuggestion } from "@/types/toolDraft";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { arrayToBullets } from "@/utils/toolSections";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -42,6 +43,13 @@ const formSchema = z.object({
     message: "Tool name must be at least 2 characters.",
   }),
   description: z.string().optional(),
+  shortDescription: z.string().max(500, "Keep the short description under 500 characters").optional(),
+  commonUses: z.string().optional(),
+  howToUse: z.string().optional(),
+  commonProjects: z.string().optional(),
+  safetyTips: z.string().optional(),
+  whatsIncluded: z.string().optional(),
+  tipsAndTricks: z.string().optional(),
   categoryId: z.string({
     required_error: "Please select a category.",
   }),
@@ -96,21 +104,20 @@ const AddTool = () => {
   
   // Legacy single-image mode states
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [aiSuggestion, setAiSuggestion] = useState<{
-    tool_name: string;
-    description: string;
-    category: string;
-    condition: string;
-    confidence: number;
-    brand?: string;
-    power_source?: string;
-  } | null>(null);
+  const [aiSuggestion, setAiSuggestion] = useState<ToolAISuggestion | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
       description: "",
+      shortDescription: "",
+      commonUses: "",
+      howToUse: "",
+      commonProjects: "",
+      safetyTips: "",
+      whatsIncluded: "",
+      tipsAndTricks: "",
       instructions: "",
       hiddenFromGroups: [],
       brand: "",
