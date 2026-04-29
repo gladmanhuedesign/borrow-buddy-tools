@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tool } from "@/types";
 import { toolConditionLabels, toolStatusLabels, toolPowerSourceLabels } from "@/config/toolCategories";
-import { ArrowLeft, AlertCircle, Clock, Loader2, Zap, Battery, Fuel, Wrench, Wind, Trash2 } from "lucide-react";
+import { ArrowLeft, AlertCircle, Clock, Loader2, Zap, Battery, Fuel, Wrench, Wind, Trash2, ShieldAlert, Lightbulb, ListChecks, Hammer, Package, Sparkles } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -42,6 +42,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ToolHistory } from "@/components/tools/ToolHistory";
 import { FormattedDescription } from "@/components/tools/FormattedDescription";
+import { ToolSection } from "@/components/tools/ToolSection";
+import { hasAnyStructuredSection } from "@/utils/toolSections";
 
 const requestFormSchema = z.object({
   notes: z.string().optional(),
@@ -147,6 +149,13 @@ const ToolDetail = () => {
           imageUrl: toolData.image_url,
           brand: toolData.brand,
           powerSource: toolData.power_source,
+          shortDescription: toolData.short_description,
+          commonUses: toolData.common_uses,
+          howToUse: toolData.how_to_use,
+          commonProjects: toolData.common_projects,
+          safetyTips: toolData.safety_tips,
+          whatsIncluded: toolData.whats_included,
+          tipsAndTricks: toolData.tips_and_tricks,
           createdAt: toolData.created_at,
           updatedAt: toolData.updated_at,
         };
@@ -330,18 +339,77 @@ const ToolDetail = () => {
             </div>
           )}
 
-          <div className="mt-6 space-y-4">
-            <div>
-              <h2 className="font-medium">Description of Use</h2>
-              <FormattedDescription text={tool.description} />
-            </div>
+          <div className="mt-6 space-y-5">
+            {(() => {
+              const hasStructured = hasAnyStructuredSection({
+                short_description: tool.shortDescription,
+                common_uses: tool.commonUses,
+                how_to_use: tool.howToUse,
+                common_projects: tool.commonProjects,
+                safety_tips: tool.safetyTips,
+                whats_included: tool.whatsIncluded,
+                tips_and_tricks: tool.tipsAndTricks,
+              });
 
-            {tool.instructions && tool.instructions !== tool.description && (
-              <div>
-                <h2 className="font-medium">Usage Instructions</h2>
-                <FormattedDescription text={tool.instructions} />
-              </div>
-            )}
+              // Fallback: legacy single description for old tools
+              if (!hasStructured) {
+                return (
+                  <>
+                    <div>
+                      <h2 className="font-medium">Description of Use</h2>
+                      <FormattedDescription text={tool.description} />
+                    </div>
+                    {tool.instructions && tool.instructions !== tool.description && (
+                      <div>
+                        <h2 className="font-medium">Usage Instructions</h2>
+                        <FormattedDescription text={tool.instructions} />
+                      </div>
+                    )}
+                  </>
+                );
+              }
+
+              return (
+                <>
+                  {tool.shortDescription && (
+                    <p className="text-base text-foreground leading-relaxed">
+                      {tool.shortDescription}
+                    </p>
+                  )}
+                  <ToolSection
+                    title="Common uses"
+                    text={tool.commonUses}
+                    icon={<ListChecks className="h-4 w-4 text-primary" />}
+                  />
+                  <ToolSection
+                    title="How to use"
+                    text={tool.howToUse}
+                    icon={<Hammer className="h-4 w-4 text-primary" />}
+                  />
+                  <ToolSection
+                    title="Common projects"
+                    text={tool.commonProjects}
+                    icon={<Sparkles className="h-4 w-4 text-primary" />}
+                  />
+                  <ToolSection
+                    title="Safety tips"
+                    text={tool.safetyTips}
+                    icon={<ShieldAlert className="h-4 w-4" />}
+                    variant="warning"
+                  />
+                  <ToolSection
+                    title="What's included"
+                    text={tool.whatsIncluded}
+                    icon={<Package className="h-4 w-4 text-primary" />}
+                  />
+                  <ToolSection
+                    title="Tips & tricks"
+                    text={tool.tipsAndTricks}
+                    icon={<Lightbulb className="h-4 w-4 text-primary" />}
+                  />
+                </>
+              );
+            })()}
           </div>
         </div>
 
