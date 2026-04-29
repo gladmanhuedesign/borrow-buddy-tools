@@ -36,9 +36,14 @@ const formSchema = z.object({
   name: z.string().min(2, {
     message: "Tool name must be at least 2 characters.",
   }),
-  description: z.string().min(10, {
-    message: "Description must be at least 10 characters.",
-  }),
+  description: z.string().optional(),
+  shortDescription: z.string().max(500, "Keep the short description under 500 characters").optional(),
+  commonUses: z.string().optional(),
+  howToUse: z.string().optional(),
+  commonProjects: z.string().optional(),
+  safetyTips: z.string().optional(),
+  whatsIncluded: z.string().optional(),
+  tipsAndTricks: z.string().optional(),
   categoryId: z.string({
     required_error: "Please select a category.",
   }),
@@ -100,12 +105,20 @@ const EditTool = () => {
     defaultValues: {
       name: "",
       description: "",
+      shortDescription: "",
+      commonUses: "",
+      howToUse: "",
+      commonProjects: "",
+      safetyTips: "",
+      whatsIncluded: "",
+      tipsAndTricks: "",
       instructions: "",
       hiddenFromGroups: [],
       brand: "",
       powerSource: undefined,
     },
   });
+  const [isSectionsOpen, setIsSectionsOpen] = useState(false);
 
   // Watch for image file changes to generate preview
   const imageFile = form.watch("image");
@@ -185,7 +198,7 @@ const EditTool = () => {
         }
 
         setTool(toolData);
-        
+
         // Set form values
         form.setValue("name", toolData.name);
         form.setValue("description", toolData.description || "");
@@ -196,7 +209,25 @@ const EditTool = () => {
         if (toolData.power_source) {
           form.setValue("powerSource", toolData.power_source as ToolPowerSource);
         }
-        
+
+        // Structured sections
+        form.setValue("shortDescription", toolData.short_description || "");
+        form.setValue("commonUses", toolData.common_uses || "");
+        form.setValue("howToUse", toolData.how_to_use || "");
+        form.setValue("commonProjects", toolData.common_projects || "");
+        form.setValue("safetyTips", toolData.safety_tips || "");
+        form.setValue("whatsIncluded", toolData.whats_included || "");
+        form.setValue("tipsAndTricks", toolData.tips_and_tricks || "");
+        if (
+          toolData.how_to_use ||
+          toolData.common_projects ||
+          toolData.safety_tips ||
+          toolData.whats_included ||
+          toolData.tips_and_tricks
+        ) {
+          setIsSectionsOpen(true);
+        }
+
         if (toolData.image_url) {
           setPreviewUrl(toolData.image_url);
         }
