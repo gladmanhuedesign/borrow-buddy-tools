@@ -50,6 +50,14 @@ export interface Tool {
   imageUrl?: string;
   brand?: string;
   powerSource?: string;
+  // Structured description sections (all optional, all stored as text)
+  shortDescription?: string | null;
+  commonUses?: string | null;
+  howToUse?: string | null;
+  commonProjects?: string | null;
+  safetyTips?: string | null;
+  whatsIncluded?: string | null;
+  tipsAndTricks?: string | null;
   createdAt: string;
   updatedAt: string;
 }
