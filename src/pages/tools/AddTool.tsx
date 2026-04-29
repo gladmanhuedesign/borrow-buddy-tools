@@ -92,6 +92,7 @@ const AddTool = () => {
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+  const [isSectionsOpen, setIsSectionsOpen] = useState(false);
   
   // Multi-image batch mode states
   const [toolDrafts, setToolDrafts] = useState<ToolDraft[]>([]);
