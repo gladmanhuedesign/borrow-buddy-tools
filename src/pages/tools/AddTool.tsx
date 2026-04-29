@@ -655,6 +655,12 @@ const AddTool = () => {
             condition: suggestion.condition as ToolCondition,
             brand: suggestion.brand || '',
             powerSource: powerSourceValue,
+            shortDescription: suggestion.short_description || '',
+            commonUses: arrayToBullets(suggestion.common_uses),
+            howToUse: arrayToBullets(suggestion.how_to_use),
+            commonProjects: arrayToBullets(suggestion.common_projects),
+            safetyTips: arrayToBullets(suggestion.safety_tips),
+            tipsAndTricks: arrayToBullets(suggestion.tips_and_tricks),
           };
           draft.status = 'analyzed';
         } else {
