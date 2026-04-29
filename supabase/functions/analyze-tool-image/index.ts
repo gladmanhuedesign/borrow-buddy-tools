@@ -12,7 +12,6 @@ serve(async (req) => {
   }
 
   try {
-    // Input validation schema
     const requestSchema = z.object({
       image: z.string()
         .min(1, "Image required")
@@ -29,8 +28,8 @@ serve(async (req) => {
     if (!validationResult.success) {
       console.error('Validation failed:', validationResult.error.issues);
       return new Response(
-        JSON.stringify({ 
-          error: 'Invalid input', 
+        JSON.stringify({
+          error: 'Invalid input',
           details: validationResult.error.issues.map(i => i.message).join(', ')
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -39,7 +38,7 @@ serve(async (req) => {
 
     const { image } = validationResult.data;
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    
+
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
@@ -60,13 +59,11 @@ serve(async (req) => {
             content: [
               {
                 type: 'text',
-                text: 'Analyze this tool image and extract detailed information. Identify the tool name, brand (if visible), provide a detailed description, determine the best matching category, estimate the condition based on visual appearance, and identify the power source type if visible from the image, labels, or visible features.'
+                text: 'Analyze this tool image and extract detailed structured information. Identify the tool, its brand, condition, power source, and write helpful sections that explain what the tool is for, how to use it, common projects, and safety tips. Keep the short_description to 1-2 sentences. Each list item should be a single concise phrase or sentence.'
               },
               {
                 type: 'image_url',
-                image_url: {
-                  url: image
-                }
+                image_url: { url: image }
               }
             ]
           }
@@ -84,9 +81,38 @@ serve(async (req) => {
                     type: 'string',
                     description: 'The specific name of the tool (e.g., "Cordless Drill", "Hammer", "Lawn Mower")'
                   },
+                  short_description: {
+                    type: 'string',
+                    description: '1-2 sentence summary of what this tool is. Used in cards and search results.'
+                  },
+                  common_uses: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: '3-6 typical tasks this tool is good for. Each item is a short phrase.'
+                  },
+                  how_to_use: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: '3-7 ordered steps for safely operating this tool.'
+                  },
+                  common_projects: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: '3-5 example projects or scenarios where this tool is commonly used.'
+                  },
+                  safety_tips: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: '3-5 important safety considerations, PPE recommendations, or things to avoid.'
+                  },
+                  tips_and_tricks: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: '2-4 helpful tips for getting the best results with this tool.'
+                  },
                   description: {
                     type: 'string',
-                    description: 'A detailed description of the tool including its features, specifications, and potential uses'
+                    description: 'Legacy combined description. Provide a paragraph summary covering features and uses for backward compatibility.'
                   },
                   category: {
                     type: 'string',
@@ -96,7 +122,7 @@ serve(async (req) => {
                   condition: {
                     type: 'string',
                     enum: ['new', 'excellent', 'good', 'fair', 'worn'],
-                    description: 'Visual condition assessment: new (unused), excellent (like new), good (minor wear), fair (visible wear), worn (significant wear)'
+                    description: 'Visual condition assessment'
                   },
                   confidence: {
                     type: 'number',
@@ -104,15 +130,15 @@ serve(async (req) => {
                   },
                   brand: {
                     type: 'string',
-                    description: 'The brand or manufacturer name if visible on the tool (e.g., "DeWalt", "Milwaukee", "Bosch", "Craftsman")'
+                    description: 'The brand or manufacturer name if visible (e.g., "DeWalt", "Milwaukee", "Bosch")'
                   },
                   power_source: {
                     type: 'string',
                     enum: ['battery', 'corded', 'gas', 'manual', 'pneumatic', 'hybrid'],
-                    description: 'The power source type if identifiable: battery (cordless/battery-powered), corded (electric with cord), gas (fuel-powered), manual (hand-powered), pneumatic (air-powered), hybrid (multiple power options)'
+                    description: 'The power source type if identifiable'
                   }
                 },
-                required: ['tool_name', 'description', 'category', 'condition', 'confidence']
+                required: ['tool_name', 'short_description', 'common_uses', 'how_to_use', 'description', 'category', 'condition', 'confidence']
               }
             }
           }
@@ -137,7 +163,7 @@ serve(async (req) => {
           { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      
+
       const errorText = await response.text();
       console.error('AI gateway error:', response.status, errorText);
       return new Response(
@@ -158,7 +184,7 @@ serve(async (req) => {
     }
 
     const toolData = JSON.parse(toolCall.function.arguments);
-    
+
     return new Response(
       JSON.stringify({
         success: true,

@@ -185,7 +185,7 @@ export const useToolSearch = (searchTerm: string, enabled: boolean = true) => {
         return {
           id: tool.id,
           name: tool.name,
-          description: tool.description || '',
+          description: (tool as any).short_description || tool.description || '',
           category_name: tool.tool_categories?.name || categoriesMap.get(tool.category_id || '') || null,
           group_name: groupsMap.get(userGroupMap.get(tool.owner_id) || '') || 'Unknown Group',
           owner_name: ownerData?.name || 'Unknown User',

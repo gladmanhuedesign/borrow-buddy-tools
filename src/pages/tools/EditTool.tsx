@@ -36,9 +36,14 @@ const formSchema = z.object({
   name: z.string().min(2, {
     message: "Tool name must be at least 2 characters.",
   }),
-  description: z.string().min(10, {
-    message: "Description must be at least 10 characters.",
-  }),
+  description: z.string().optional(),
+  shortDescription: z.string().max(500, "Keep the short description under 500 characters").optional(),
+  commonUses: z.string().optional(),
+  howToUse: z.string().optional(),
+  commonProjects: z.string().optional(),
+  safetyTips: z.string().optional(),
+  whatsIncluded: z.string().optional(),
+  tipsAndTricks: z.string().optional(),
   categoryId: z.string({
     required_error: "Please select a category.",
   }),
@@ -100,12 +105,20 @@ const EditTool = () => {
     defaultValues: {
       name: "",
       description: "",
+      shortDescription: "",
+      commonUses: "",
+      howToUse: "",
+      commonProjects: "",
+      safetyTips: "",
+      whatsIncluded: "",
+      tipsAndTricks: "",
       instructions: "",
       hiddenFromGroups: [],
       brand: "",
       powerSource: undefined,
     },
   });
+  const [isSectionsOpen, setIsSectionsOpen] = useState(false);
 
   // Watch for image file changes to generate preview
   const imageFile = form.watch("image");
@@ -185,7 +198,7 @@ const EditTool = () => {
         }
 
         setTool(toolData);
-        
+
         // Set form values
         form.setValue("name", toolData.name);
         form.setValue("description", toolData.description || "");
@@ -196,7 +209,25 @@ const EditTool = () => {
         if (toolData.power_source) {
           form.setValue("powerSource", toolData.power_source as ToolPowerSource);
         }
-        
+
+        // Structured sections
+        form.setValue("shortDescription", toolData.short_description || "");
+        form.setValue("commonUses", toolData.common_uses || "");
+        form.setValue("howToUse", toolData.how_to_use || "");
+        form.setValue("commonProjects", toolData.common_projects || "");
+        form.setValue("safetyTips", toolData.safety_tips || "");
+        form.setValue("whatsIncluded", toolData.whats_included || "");
+        form.setValue("tipsAndTricks", toolData.tips_and_tricks || "");
+        if (
+          toolData.how_to_use ||
+          toolData.common_projects ||
+          toolData.safety_tips ||
+          toolData.whats_included ||
+          toolData.tips_and_tricks
+        ) {
+          setIsSectionsOpen(true);
+        }
+
         if (toolData.image_url) {
           setPreviewUrl(toolData.image_url);
         }
@@ -317,7 +348,14 @@ const EditTool = () => {
         .from('tools')
         .update({
           name: data.name,
-          description: data.description,
+          description: data.description || null,
+          short_description: data.shortDescription || null,
+          common_uses: data.commonUses || null,
+          how_to_use: data.howToUse || null,
+          common_projects: data.commonProjects || null,
+          safety_tips: data.safetyTips || null,
+          whats_included: data.whatsIncluded || null,
+          tips_and_tricks: data.tipsAndTricks || null,
           category_id: data.categoryId,
           image_url: imageUrl,
           brand: data.brand || null,
@@ -456,14 +494,14 @@ const EditTool = () => {
           
           <FormField
             control={form.control}
-            name="description"
+            name="shortDescription"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Description of Use</FormLabel>
+                <FormLabel>Short description</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder="Describe what this tool is used for and how to use it"
-                    className="min-h-[120px]"
+                    placeholder="1-2 sentence summary, shown in cards and search"
+                    className="min-h-[80px]"
                     {...field}
                   />
                 </FormControl>
@@ -471,7 +509,125 @@ const EditTool = () => {
               </FormItem>
             )}
           />
-          
+
+          <FormField
+            control={form.control}
+            name="commonUses"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Common uses</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder={"One per line, e.g.\n- Drilling holes in wood\n- Driving screws"}
+                    className="min-h-[100px]"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Collapsible open={isSectionsOpen} onOpenChange={setIsSectionsOpen}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" type="button" className="flex items-center gap-2 p-0 h-auto">
+                {isSectionsOpen ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+                More details (how to use, projects, safety, tips)
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 mt-4">
+              <FormField
+                control={form.control}
+                name="howToUse"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>How to use</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder={"Step-by-step usage. One step per line:\n- Step 1\n- Step 2"}
+                        className="min-h-[100px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="commonProjects"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Common projects</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder={"Examples of projects this tool is great for:\n- Building a deck\n- Hanging shelves"}
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="safetyTips"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Safety tips</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder={"PPE & important warnings, one per line:\n- Wear safety glasses\n- Disconnect before changing bits"}
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="whatsIncluded"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>What's included</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder={"Accessories that come with this tool:\n- 2 batteries\n- Charger\n- Carrying case"}
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="tipsAndTricks"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tips & tricks</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Personal tips for getting the best results"
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CollapsibleContent>
+          </Collapsible>
+
           <div className="grid gap-6 md:grid-cols-3">
             <FormField
               control={form.control}
@@ -684,24 +840,6 @@ const EditTool = () => {
               )}
             </div>
           </FormItem>
-          
-          <FormField
-            control={form.control}
-            name="instructions"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Usage Instructions (Optional)</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Add any special instructions or tips for using this tool"
-                    className="min-h-[100px]"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
           
           <div className="flex gap-4">
             <Button

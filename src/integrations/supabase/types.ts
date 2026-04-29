@@ -436,44 +436,65 @@ export type Database = {
         Row: {
           brand: string | null
           category_id: string | null
+          common_projects: string | null
+          common_uses: string | null
           condition: string | null
           created_at: string
           description: string | null
+          how_to_use: string | null
           id: string
           image_url: string | null
           name: string
           owner_id: string
           power_source: string | null
+          safety_tips: string | null
+          short_description: string | null
           status: string
+          tips_and_tricks: string | null
           updated_at: string
+          whats_included: string | null
         }
         Insert: {
           brand?: string | null
           category_id?: string | null
+          common_projects?: string | null
+          common_uses?: string | null
           condition?: string | null
           created_at?: string
           description?: string | null
+          how_to_use?: string | null
           id?: string
           image_url?: string | null
           name: string
           owner_id: string
           power_source?: string | null
+          safety_tips?: string | null
+          short_description?: string | null
           status?: string
+          tips_and_tricks?: string | null
           updated_at?: string
+          whats_included?: string | null
         }
         Update: {
           brand?: string | null
           category_id?: string | null
+          common_projects?: string | null
+          common_uses?: string | null
           condition?: string | null
           created_at?: string
           description?: string | null
+          how_to_use?: string | null
           id?: string
           image_url?: string | null
           name?: string
           owner_id?: string
           power_source?: string | null
+          safety_tips?: string | null
+          short_description?: string | null
           status?: string
+          tips_and_tricks?: string | null
           updated_at?: string
+          whats_included?: string | null
         }
         Relationships: [
           {

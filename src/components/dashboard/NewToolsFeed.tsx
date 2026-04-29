@@ -106,7 +106,7 @@ export const NewToolsFeed = () => {
         return {
           id: tool.id,
           name: tool.name,
-          description: tool.description,
+          description: (tool as any).short_description || tool.description,
           image_url: tool.image_url,
           created_at: tool.created_at,
           owner_name: ownerData?.name || 'Unknown User',

@@ -30,9 +30,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ToolDraft } from "@/types/toolDraft";
+import { ToolDraft, ToolAISuggestion } from "@/types/toolDraft";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { arrayToBullets } from "@/utils/toolSections";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -42,6 +43,13 @@ const formSchema = z.object({
     message: "Tool name must be at least 2 characters.",
   }),
   description: z.string().optional(),
+  shortDescription: z.string().max(500, "Keep the short description under 500 characters").optional(),
+  commonUses: z.string().optional(),
+  howToUse: z.string().optional(),
+  commonProjects: z.string().optional(),
+  safetyTips: z.string().optional(),
+  whatsIncluded: z.string().optional(),
+  tipsAndTricks: z.string().optional(),
   categoryId: z.string({
     required_error: "Please select a category.",
   }),
@@ -84,6 +92,7 @@ const AddTool = () => {
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+  const [isSectionsOpen, setIsSectionsOpen] = useState(false);
   
   // Multi-image batch mode states
   const [toolDrafts, setToolDrafts] = useState<ToolDraft[]>([]);
@@ -96,21 +105,20 @@ const AddTool = () => {
   
   // Legacy single-image mode states
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [aiSuggestion, setAiSuggestion] = useState<{
-    tool_name: string;
-    description: string;
-    category: string;
-    condition: string;
-    confidence: number;
-    brand?: string;
-    power_source?: string;
-  } | null>(null);
+  const [aiSuggestion, setAiSuggestion] = useState<ToolAISuggestion | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
       description: "",
+      shortDescription: "",
+      commonUses: "",
+      howToUse: "",
+      commonProjects: "",
+      safetyTips: "",
+      whatsIncluded: "",
+      tipsAndTricks: "",
       instructions: "",
       hiddenFromGroups: [],
       brand: "",
@@ -301,6 +309,13 @@ const AddTool = () => {
           .insert({
             name: data.name,
             description: data.description || null,
+            short_description: data.shortDescription || null,
+            common_uses: data.commonUses || null,
+            how_to_use: data.howToUse || null,
+            common_projects: data.commonProjects || null,
+            safety_tips: data.safetyTips || null,
+            whats_included: data.whatsIncluded || null,
+            tips_and_tricks: data.tipsAndTricks || null,
             category_id: data.categoryId,
             owner_id: currentUser.id,
             image_url: imageUrl,
@@ -404,6 +419,13 @@ const AddTool = () => {
         .insert({
           name: data.name,
           description: data.description || null,
+          short_description: data.shortDescription || null,
+          common_uses: data.commonUses || null,
+          how_to_use: data.howToUse || null,
+          common_projects: data.commonProjects || null,
+          safety_tips: data.safetyTips || null,
+          whats_included: data.whatsIncluded || null,
+          tips_and_tricks: data.tipsAndTricks || null,
           category_id: data.categoryId,
           owner_id: currentUser.id,
           image_url: imageUrl,
@@ -519,16 +541,22 @@ const AddTool = () => {
         // Pre-fill form with AI suggestions
         form.setValue('name', suggestion.tool_name);
         form.setValue('description', suggestion.description);
+        form.setValue('shortDescription', suggestion.short_description || '');
+        form.setValue('commonUses', arrayToBullets(suggestion.common_uses));
+        form.setValue('howToUse', arrayToBullets(suggestion.how_to_use));
+        form.setValue('commonProjects', arrayToBullets(suggestion.common_projects));
+        form.setValue('safetyTips', arrayToBullets(suggestion.safety_tips));
+        form.setValue('tipsAndTricks', arrayToBullets(suggestion.tips_and_tricks));
         if (matchingCategory) {
           form.setValue('categoryId', matchingCategory.id);
         }
         form.setValue('condition', suggestion.condition as ToolCondition);
-        
+
         // Set brand if available
         if (suggestion.brand) {
           form.setValue('brand', suggestion.brand);
         }
-        
+
         // Set power source if available
         if (suggestion.power_source) {
           const powerSourceKey = suggestion.power_source.toUpperCase() as keyof typeof ToolPowerSource;
@@ -536,6 +564,9 @@ const AddTool = () => {
             form.setValue('powerSource', ToolPowerSource[powerSourceKey]);
           }
         }
+
+        // Auto-open advanced sections so user sees populated content
+        setIsSectionsOpen(true);
 
         toast({
           title: "AI Analysis Complete! 🎉",
@@ -624,6 +655,12 @@ const AddTool = () => {
             condition: suggestion.condition as ToolCondition,
             brand: suggestion.brand || '',
             powerSource: powerSourceValue,
+            shortDescription: suggestion.short_description || '',
+            commonUses: arrayToBullets(suggestion.common_uses),
+            howToUse: arrayToBullets(suggestion.how_to_use),
+            commonProjects: arrayToBullets(suggestion.common_projects),
+            safetyTips: arrayToBullets(suggestion.safety_tips),
+            tipsAndTricks: arrayToBullets(suggestion.tips_and_tricks),
           };
           draft.status = 'analyzed';
         } else {
@@ -719,6 +756,14 @@ const AddTool = () => {
     form.setValue('powerSource', (draft.formData.powerSource || undefined) as ToolPowerSource | undefined);
     form.setValue('instructions', draft.formData.instructions || '');
     form.setValue('hiddenFromGroups', draft.formData.hiddenFromGroups || []);
+    form.setValue('shortDescription', draft.formData.shortDescription || '');
+    form.setValue('commonUses', draft.formData.commonUses || '');
+    form.setValue('howToUse', draft.formData.howToUse || '');
+    form.setValue('commonProjects', draft.formData.commonProjects || '');
+    form.setValue('safetyTips', draft.formData.safetyTips || '');
+    form.setValue('whatsIncluded', draft.formData.whatsIncluded || '');
+    form.setValue('tipsAndTricks', draft.formData.tipsAndTricks || '');
+    setIsSectionsOpen(true);
   };
 
   // Load first draft when batch mode starts
@@ -894,14 +939,14 @@ const AddTool = () => {
           
           <FormField
             control={form.control}
-            name="description"
+            name="shortDescription"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Description of Use (Optional)</FormLabel>
+                <FormLabel>Short description</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder="Describe what this tool is used for and how to use it"
-                    className="min-h-[120px]"
+                    placeholder="1-2 sentence summary, shown in cards and search"
+                    className="min-h-[80px]"
                     {...field}
                   />
                 </FormControl>
@@ -909,6 +954,124 @@ const AddTool = () => {
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form.control}
+            name="commonUses"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Common uses</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder={"One per line, e.g.\n- Drilling holes in wood\n- Driving screws"}
+                    className="min-h-[100px]"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Collapsible open={isSectionsOpen} onOpenChange={setIsSectionsOpen}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" type="button" className="flex items-center gap-2 p-0 h-auto">
+                {isSectionsOpen ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+                Add more details (how to use, projects, safety, tips)
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 mt-4">
+              <FormField
+                control={form.control}
+                name="howToUse"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>How to use</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder={"Step-by-step usage. One step per line:\n- Step 1\n- Step 2"}
+                        className="min-h-[100px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="commonProjects"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Common projects</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder={"Examples of projects this tool is great for:\n- Building a deck\n- Hanging shelves"}
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="safetyTips"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Safety tips</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder={"PPE & important warnings, one per line:\n- Wear safety glasses\n- Disconnect before changing bits"}
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="whatsIncluded"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>What's included</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder={"Accessories that come with this tool:\n- 2 batteries\n- Charger\n- Carrying case"}
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="tipsAndTricks"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tips & tricks</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Personal tips for getting the best results"
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CollapsibleContent>
+          </Collapsible>
 
           <FormField
             control={form.control}
@@ -1154,24 +1317,6 @@ const AddTool = () => {
               </div>
             </FormItem>
           )}
-          
-          <FormField
-            control={form.control}
-            name="instructions"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Usage Instructions (Optional)</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Add any special instructions or tips for using this tool"
-                    className="min-h-[100px]"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
           
           {/* Button Section */}
           {isBatchMode && toolDrafts.length > 0 ? (
