@@ -1318,24 +1318,6 @@ const AddTool = () => {
             </FormItem>
           )}
           
-          <FormField
-            control={form.control}
-            name="instructions"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Usage Instructions (Optional)</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Add any special instructions or tips for using this tool"
-                    className="min-h-[100px]"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
           {/* Button Section */}
           {isBatchMode && toolDrafts.length > 0 ? (
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
