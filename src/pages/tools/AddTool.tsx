@@ -540,16 +540,22 @@ const AddTool = () => {
         // Pre-fill form with AI suggestions
         form.setValue('name', suggestion.tool_name);
         form.setValue('description', suggestion.description);
+        form.setValue('shortDescription', suggestion.short_description || '');
+        form.setValue('commonUses', arrayToBullets(suggestion.common_uses));
+        form.setValue('howToUse', arrayToBullets(suggestion.how_to_use));
+        form.setValue('commonProjects', arrayToBullets(suggestion.common_projects));
+        form.setValue('safetyTips', arrayToBullets(suggestion.safety_tips));
+        form.setValue('tipsAndTricks', arrayToBullets(suggestion.tips_and_tricks));
         if (matchingCategory) {
           form.setValue('categoryId', matchingCategory.id);
         }
         form.setValue('condition', suggestion.condition as ToolCondition);
-        
+
         // Set brand if available
         if (suggestion.brand) {
           form.setValue('brand', suggestion.brand);
         }
-        
+
         // Set power source if available
         if (suggestion.power_source) {
           const powerSourceKey = suggestion.power_source.toUpperCase() as keyof typeof ToolPowerSource;
@@ -557,6 +563,9 @@ const AddTool = () => {
             form.setValue('powerSource', ToolPowerSource[powerSourceKey]);
           }
         }
+
+        // Auto-open advanced sections so user sees populated content
+        setIsSectionsOpen(true);
 
         toast({
           title: "AI Analysis Complete! 🎉",
