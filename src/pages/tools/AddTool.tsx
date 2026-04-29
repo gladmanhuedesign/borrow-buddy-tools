@@ -756,6 +756,14 @@ const AddTool = () => {
     form.setValue('powerSource', (draft.formData.powerSource || undefined) as ToolPowerSource | undefined);
     form.setValue('instructions', draft.formData.instructions || '');
     form.setValue('hiddenFromGroups', draft.formData.hiddenFromGroups || []);
+    form.setValue('shortDescription', draft.formData.shortDescription || '');
+    form.setValue('commonUses', draft.formData.commonUses || '');
+    form.setValue('howToUse', draft.formData.howToUse || '');
+    form.setValue('commonProjects', draft.formData.commonProjects || '');
+    form.setValue('safetyTips', draft.formData.safetyTips || '');
+    form.setValue('whatsIncluded', draft.formData.whatsIncluded || '');
+    form.setValue('tipsAndTricks', draft.formData.tipsAndTricks || '');
+    setIsSectionsOpen(true);
   };
 
   // Load first draft when batch mode starts
