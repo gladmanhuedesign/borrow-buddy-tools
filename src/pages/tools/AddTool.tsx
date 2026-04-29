@@ -939,14 +939,14 @@ const AddTool = () => {
           
           <FormField
             control={form.control}
-            name="description"
+            name="shortDescription"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Description of Use (Optional)</FormLabel>
+                <FormLabel>Short description</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder="Describe what this tool is used for and how to use it"
-                    className="min-h-[120px]"
+                    placeholder="1-2 sentence summary, shown in cards and search"
+                    className="min-h-[80px]"
                     {...field}
                   />
                 </FormControl>
@@ -954,6 +954,124 @@ const AddTool = () => {
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form.control}
+            name="commonUses"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Common uses</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder={"One per line, e.g.\n- Drilling holes in wood\n- Driving screws"}
+                    className="min-h-[100px]"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Collapsible open={isSectionsOpen} onOpenChange={setIsSectionsOpen}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" type="button" className="flex items-center gap-2 p-0 h-auto">
+                {isSectionsOpen ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+                Add more details (how to use, projects, safety, tips)
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 mt-4">
+              <FormField
+                control={form.control}
+                name="howToUse"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>How to use</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder={"Step-by-step usage. One step per line:\n- Step 1\n- Step 2"}
+                        className="min-h-[100px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="commonProjects"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Common projects</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder={"Examples of projects this tool is great for:\n- Building a deck\n- Hanging shelves"}
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="safetyTips"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Safety tips</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder={"PPE & important warnings, one per line:\n- Wear safety glasses\n- Disconnect before changing bits"}
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="whatsIncluded"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>What's included</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder={"Accessories that come with this tool:\n- 2 batteries\n- Charger\n- Carrying case"}
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="tipsAndTricks"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tips & tricks</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Personal tips for getting the best results"
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CollapsibleContent>
+          </Collapsible>
 
           <FormField
             control={form.control}
