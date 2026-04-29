@@ -308,6 +308,13 @@ const AddTool = () => {
           .insert({
             name: data.name,
             description: data.description || null,
+            short_description: data.shortDescription || null,
+            common_uses: data.commonUses || null,
+            how_to_use: data.howToUse || null,
+            common_projects: data.commonProjects || null,
+            safety_tips: data.safetyTips || null,
+            whats_included: data.whatsIncluded || null,
+            tips_and_tricks: data.tipsAndTricks || null,
             category_id: data.categoryId,
             owner_id: currentUser.id,
             image_url: imageUrl,
