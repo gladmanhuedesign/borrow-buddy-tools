@@ -841,24 +841,6 @@ const EditTool = () => {
             </div>
           </FormItem>
           
-          <FormField
-            control={form.control}
-            name="instructions"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Usage Instructions (Optional)</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Add any special instructions or tips for using this tool"
-                    className="min-h-[100px]"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
           <div className="flex gap-4">
             <Button
               type="button"
